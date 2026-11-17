@@ -224,7 +224,7 @@ tr.me td{color:var(--acc);font-weight:700}
         <li><b>Gegen den Wind</b> kannst du nicht direkt – ca. 45° zum Wind kreuzen (grüne Marken auf der Windrose). Laylines zeigen, wann du die Tonne anliegst.</li>
         <li><b>Trimm:</b> Großschot so weit fieren, bis das Segel gerade nicht killt. Luv-Faden hebt sich = dichter holen, Lee-Faden hängt = fieren.</li>
         <li><b>Dreher:</b> Header (Wind dreht gegen dich) → wenden. Dunkle Flecken auf dem Wasser sind Böen.</li>
-        <li><b>Spinnaker / Gennaker</b> (470er, 49er, Nacra 17, IMOCA): Nach der Luvtonne mit dem Knopf über der Schot (oder Taste G) setzen – auf Raumschots- und Vorwindkurs deutlich schneller. Vor der Leetonne wieder bergen, sonst wird das Boot am Wind überpowert und langsam. Der Spi trägt bis ca. 85° zum Wind, der Gennaker bis ca. 70°. Bei „Automatisch“-Trimm macht das die Crew selbst.</li>
+        <li><b>Spinnaker / Gennaker</b> (470er, 49er, Nacra 17, IMOCA): Nach der Luvtonne mit dem Knopf über der Schot (oder Taste G) setzen – auf Raumschots- und Vorwindkurs deutlich schneller. Vor der Leetonne wieder bergen, sonst wird das Boot am Wind überpowert und langsam. Der Spi trägt bis ca. 85° zum Wind, der Gennaker bis ca. 70°. Das musst du immer selbst machen – auch bei automatischem Trimm.</li>
         <li><b>Foiler (Moth, Nacra 17):</b> Über ca. 9–10 kn hebt das Boot ab und wird viel schneller. Mit genug Fahrt und sanftem Ruder bleibst du auch in Wende und Halse auf den Foils (Wende-Knopf/Leertaste fährt die Wende automatisch weich). Hartes Ruderlegen oder zu viel Fahrtverlust → das Boot fällt ins Wasser und muss neu abheben.</li>
         <li><b>Wegerecht:</b> Backbordbug weicht Steuerbordbug, Luv weicht Lee. Kollision = 720°-Kringel, Tonne berührt = 360°.</li>
       </ul>
@@ -828,13 +828,7 @@ const SIM = (() => {
       luff = Math.max(luff, clamp((36 - twa) / 10, 0, 1));
       eff = Math.max(eff, 0.06);
       if (!C.kite) b.kite = false;
-      else if (b.isPlayer && !this.autoTrim) b.kite = !!b.kiteCmd;
-      else if (b.isPlayer) {
-        const st2 = b.leg >= 1 && b.leg <= this.course.route.length ? this.course.route[b.leg - 1] : null;
-        const tgt = this.nextMark(b);
-        const far = tgt && Math.hypot(b.x - tgt.x, b.z - tgt.z) > Math.max(25, C.L * 5) * Math.max(1, this.s * 0.8);
-        b.kite = !!st2 && st2.legTwa > 95 && b.penalty === 0 && far && (twa > 100 || (b.kite && twa > 82));
-      } else b.kite = !!b.kiteCmd;
+      else b.kite = !!b.kiteCmd; // Spieler setzt/birgt immer selbst, KI über kiteCmd
       b.kiteF += ((b.kite ? 1 : 0) - b.kiteF) * Math.min(1, dt * 0.7);
       let heelT = 26 * Math.pow(w.spd / 12, 2) * Math.pow(Math.sin(Math.min(awa, 100) * DEG), 1.5) * (0.4 + 0.6 * eff) * (1 + over * 0.9) * (1 - luff * 0.85);
       if (awa > 90) heelT *= Math.max(0, 1 - (awa - 90) / 70);
@@ -2522,7 +2516,6 @@ void main(){
     if (!world || paused || state !== 'race') return;
     const p = world.player, k = world.cls.kite;
     if (!k) return;
-    if (world.autoTrim) { toast('Bei Auto-Trimm setzt die Crew ' + kiteName() + ' selbst', 2); return; }
     p.kiteCmd = !p.kiteCmd;
     toast(kiteName() + (p.kiteCmd ? ' wird gesetzt' : ' wird geborgen'), 1.5);
   }
@@ -2696,12 +2689,12 @@ void main(){
     const kb = $('bkite'), kc = world.cls.kite;
     kb.style.display = kc ? '' : 'none';
     if (kc) {
-      const up = p.kiteF > 0.5 || (p.kiteCmd && !world.autoTrim);
-      kb.innerHTML = kiteName() + '<br><small>' + (world.autoTrim ? 'automatisch' : p.kiteCmd ? (p.kiteF > 0.9 ? 'bergen' : 'wird gesetzt…') : (p.kiteF > 0.1 ? 'wird geborgen…' : 'setzen')) + '</small>';
+      const up = p.kiteF > 0.5 || p.kiteCmd;
+      kb.innerHTML = kiteName() + '<br><small>' + (p.kiteCmd ? (p.kiteF > 0.9 ? 'bergen' : 'wird gesetzt…') : (p.kiteF > 0.1 ? 'wird geborgen…' : 'setzen')) + '</small>';
       kb.classList.toggle('up', up);
       const tw = Math.abs(p.twa) / DEG;
-      kb.classList.toggle('hint', !world.autoTrim && !p.kiteCmd && tw > 100 && p.leg >= 1 && !p.done);
-      kb.classList.toggle('warn', !world.autoTrim && p.kiteF > 0.3 && tw < (kc === 'sym' ? 85 : 70));
+      kb.classList.toggle('hint', !p.kiteCmd && tw > 100 && p.leg >= 1 && !p.done);
+      kb.classList.toggle('warn', p.kiteF > 0.3 && tw < (kc === 'sym' ? 85 : 70));
     }
     $('status').textContent = st;
     $('status').className = p.penalty > 0 || p.ocs ? 'bad' : '';
