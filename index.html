@@ -119,6 +119,40 @@ tr.me td{color:var(--acc);font-weight:700}
 .chk input{width:auto!important}
 #mpmsg{font-size:13px;font-weight:600;margin-top:10px;min-height:18px}
 .nametag{position:absolute;left:0;top:0;padding:2px 8px;border-radius:8px;background:rgba(8,20,36,.7);border:2px solid #fff;font-size:11.5px;font-weight:700;white-space:nowrap;pointer-events:none}
+#spec,#rbar{display:none}
+body.spectating #tl,body.spectating #instr,body.spectating #steer,body.spectating #sheetctl,body.spectating #keys,body.spectating #marklabel,body.spectating #rank{display:none!important}
+body.spectating #spec{display:block;position:absolute;left:12px;top:12px;width:300px;max-height:calc(100% - 90px);overflow:auto;padding:10px 12px;pointer-events:auto}
+body.replaying #rbar{display:flex;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));gap:8px;align-items:center;padding:8px 10px;pointer-events:auto;width:min(680px,94vw)}
+body.replaying #specend{display:none}
+#rbar input[type=range]{flex:1;min-width:80px}
+#rbar select,#ana select{background:rgba(255,255,255,.12);color:#fff;border:1px solid var(--line);border-radius:8px;padding:6px;font:600 12px Inter,sans-serif}
+#rtime,#anatime{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;min-width:44px;text-align:right}
+.spechead{display:flex;gap:6px;align-items:center;margin-bottom:6px}.spechead .sp{flex:1}
+#speclist{list-style:none;margin:0;padding:0;font-size:13px}
+#speclist li{display:flex;gap:7px;align-items:center;padding:5px 6px;border-radius:8px;cursor:pointer}
+#speclist li.sel{background:rgba(255,176,32,.25)}
+#speclist li b{width:16px;text-align:right;opacity:.8}
+#speclist .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+#speclist .inf{font-variant-numeric:tabular-nums;opacity:.85;font-size:12px;white-space:nowrap}
+.specbtns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.menurow{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.filebtn{position:relative;overflow:hidden;display:inline-block}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.anacard{width:min(980px,100%)}
+.anahead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+#anamap{width:100%;height:min(52vh,460px);border-radius:12px;display:block;margin-top:8px}
+.anactl{display:flex;gap:8px;align-items:center;margin-top:8px}
+.anactl input[type=range]{flex:1}
+.anabtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tablewrap{overflow-x:auto}
+#anatable{font-size:12.5px;margin-top:10px}
+#anatable th{text-align:left;font-weight:600;opacity:.6;padding:6px;border-bottom:1px solid var(--line);white-space:nowrap}
+#anatable td{white-space:nowrap;text-align:left!important}
+#anatable tr[data-i]{cursor:pointer}
+#anatable tr.sel td{background:rgba(255,176,32,.18)}
+#anasplits h3{font-size:15px;margin:14px 0 4px}
+#anasplits table{font-size:12.5px}
+@media (max-width:700px){ body.spectating #spec{width:calc(100% - 130px);max-height:44vh;top:8px;left:8px;padding:8px} #speclist{font-size:12px} }
 #resstats{font-size:12.5px;opacity:.65;margin-top:10px}
 @media (max-width:700px){
   .clsgrid{grid-template-columns:repeat(2,1fr)}
@@ -176,6 +210,20 @@ tr.me td{color:var(--acc);font-weight:700}
       <button id="bpause" title="Pause (P)"><svg viewBox="0 0 24 24" fill="#fff"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button>
     </div>
   </div>
+  <div id="spec" class="panel">
+    <div class="spechead"><b>Rangliste</b><span class="sp"></span><button class="mini" id="specfollow">Totale</button><button class="mini" id="specin">＋</button><button class="mini" id="specout">－</button></div>
+    <ol id="speclist"></ol>
+    <div class="specbtns"><button class="mini" id="specana">Analyse</button><button class="mini" id="specend">Beenden &amp; analysieren</button></div>
+    <div class="hint" style="margin:6px 0 0">Boot antippen = verfolgen · ziehen = drehen · Mausrad/＋－ = Zoom</div>
+  </div>
+  <div id="rbar" class="panel">
+    <button class="mini" id="rplay">❚❚</button>
+    <select id="rspeed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option></select>
+    <input type="range" id="rslider" min="0" max="1" step="0.5">
+    <span id="rtime">0:00</span>
+    <button class="mini" id="rana">Analyse</button>
+    <button class="mini" id="rexit">Beenden</button>
+  </div>
   <div id="toast"></div>
   <div id="marklabel"></div>
   <div id="keys" class="panel"><b>←</b><b>→</b> steuern (Shift = fein)<br><b>↑</b> dichtholen · <b>↓</b> fieren · <b>F</b> ganz fieren (halten)<br><b>Leer</b> Wende/Halse · <b>G</b> Spi/Gennaker<br><b>C</b> Kamera · <b>H</b> Hilfen · <b>P</b> Pause<br> · Maus ziehen = umsehen</div>
@@ -220,6 +268,7 @@ tr.me td{color:var(--acc);font-weight:700}
     <div class="opt"><label>Hilfslinien</label><div class="seg" data-key="help"><button data-v="true">An</button><button data-v="false">Aus</button></div></div>
     <button class="big-btn" id="go">Zum Start</button>
     <button class="big-btn ghost" id="bmp">Mehrspieler (QR-Code)</button>
+    <div class="menurow"><button class="mini" id="menulast">Letztes Rennen analysieren</button><label class="mini filebtn">Aufzeichnung laden<input type="file" id="menuload" accept=".json,application/json"></label></div>
     <details>
       <summary>So wird gesegelt</summary>
       <ul>
@@ -252,6 +301,7 @@ tr.me td{color:var(--acc);font-weight:700}
       <div class="hint"><b id="mpcount"></b></div>
       <ul id="mphostlist" class="plist"></ul>
       <label class="chk"><input type="checkbox" id="mpfill" checked> Mit KI-Booten auf 6 Boote auffüllen</label>
+      <label class="chk"><input type="checkbox" id="mpspec"> Ich segle nicht mit – Regattaleitung: Totale + Aufzeichnung zur Analyse</label>
       <button class="big-btn" id="mpgo">Rennen starten</button>
     </div>
     <div id="mpguest" class="hidden">
@@ -260,6 +310,19 @@ tr.me td{color:var(--acc);font-weight:700}
     </div>
     <div id="mpmsg"></div>
     <button class="big-btn ghost" id="mpback">Zurück</button>
+  </div>
+</div>
+
+<div id="ana" class="overlay hidden">
+  <div class="card anacard">
+    <div class="anahead"><div><h1 style="font-size:26px">Rennanalyse</h1><div class="hint" id="anameta"></div></div><button class="mini" id="anaclose">✕</button></div>
+    <canvas id="anamap"></canvas>
+    <div class="anactl"><button class="mini" id="anaplay">▶</button>
+      <select id="anaspeed"><option value="4">4×</option><option value="8" selected>8×</option><option value="16">16×</option><option value="32">32×</option></select>
+      <input type="range" id="anaslider" min="0" max="1" step="0.5"><span id="anatime">0:00</span></div>
+    <div class="anabtns"><button class="mini" id="ana3d">3D-Wiedergabe ab hier</button><button class="mini" id="anasave">Aufzeichnung speichern</button><label class="mini filebtn">Laden<input type="file" id="anaload" accept=".json,application/json"></label></div>
+    <div class="tablewrap"><table id="anatable"></table></div>
+    <div id="anasplits"></div>
   </div>
 </div>
 
@@ -278,6 +341,7 @@ tr.me td{color:var(--acc);font-weight:700}
     <table id="restable"></table>
     <div id="resstats"></div>
     <button class="big-btn" id="again">Nochmal segeln</button>
+    <button class="big-btn ghost" id="resana">Rennen analysieren</button>
     <button class="big-btn ghost" id="tomenu">Menü</button>
   </div>
 </div>
@@ -1126,9 +1190,9 @@ const OCEAN_VS = `
 uniform float uTime;
 uniform vec4 uW[5];
 uniform vec2 uW2[5];
-uniform vec4 uBP[8];
-uniform vec4 uBQ[8];
-uniform vec4 uBG[8];
+uniform vec4 uBP[13];
+uniform vec4 uBQ[13];
+uniform vec4 uBG[13];
 varying vec3 vPos;
 varying vec3 vN;
 varying float vH;
@@ -1154,7 +1218,7 @@ void main(){
   }
   // Wasser am Rumpf an die Wasserlinie des Bootes anpassen
   float wm = 0.0, yt = 0.0;
-  for (int i = 0; i < 8; i++){
+  for (int i = 0; i < 13; i++){
     vec4 P = uBP[i]; vec4 Qb = uBQ[i];
     if (P.w <= 0.0) continue;
     vec2 rel = xz - P.xy;
@@ -1181,9 +1245,9 @@ const OCEAN_FS = SKY_FN + `
 uniform sampler2D uNormalMap;
 uniform vec4 uPuffs[14];
 uniform vec2 uWindV;
-uniform vec4 uBP[8];
-uniform vec4 uBQ[8];
-uniform vec4 uBG[8];
+uniform vec4 uBP[13];
+uniform vec4 uBQ[13];
+uniform vec4 uBG[13];
 varying vec3 vPos;
 varying vec3 vN;
 varying float vH;
@@ -1199,7 +1263,7 @@ float hullHalfW(float a, float bw){
 void main(){
   vec2 p = vPos.xz;
   // Wasser innerhalb des Rumpfes nicht zeichnen
-  for (int i = 0; i < 8; i++){
+  for (int i = 0; i < 13; i++){
     vec4 P = uBP[i];
     if (P.w < 0.5) continue;
     vec4 Qb = uBQ[i]; vec4 G = uBG[i];
@@ -1448,7 +1512,7 @@ void main(){
   const puffU = []; for (let i = 0; i < 14; i++) puffU.push(new THREE.Vector4(0, 0, 50, 0));
   // Ruhiges Wasser direkt am Rumpf (verhindert Wasser im Boot)
   const boatU = { P: [], Q: [], G: [] };
-  for (let i = 0; i < 8; i++) { boatU.P.push(new THREE.Vector4(0, 0, 0, 0)); boatU.Q.push(new THREE.Vector4(0, 1, 1, 1)); boatU.G.push(new THREE.Vector4(0, 0, 0, 0)); }
+  for (let i = 0; i < 13; i++) { boatU.P.push(new THREE.Vector4(0, 0, 0, 0)); boatU.Q.push(new THREE.Vector4(0, 1, 1, 1)); boatU.G.push(new THREE.Vector4(0, 0, 0, 0)); }
   const oceanMat = new THREE.ShaderMaterial({
     uniforms: {
       ...shared,
@@ -2704,18 +2768,23 @@ void main(){
     views = world.boats.map((b) => new BoatView(b, cls));
     menuBoats = null;
     const s = world.s, p = world.player, st0 = world.course.start;
-    const slotOff = cfg ? (p.idx % 2 ? -1 : 1) * Math.ceil(p.idx / 2) * Math.max(10, world.cls.L * 3) : 10 * s;
-    const back = cfg ? 85 * s + (p.idx % 3) * world.cls.L * 2 : 85 * s;
-    p.x = st0.cx + st0.ux * slotOff - st0.n.x * back; p.z = st0.cz + st0.uz * slotOff - st0.n.z * back; p.h = 90 * DEG; p.v = world.cls.polar[8] * 0.5; p.px = p.x; p.pz = p.z;
-    setCamDims(cls); cam.snap = true;
-    input.sheet = world.autoTrim ? 0 : 0.45; input.easeHold = false; p.sheet = p.sheetT = 0.45; p.kiteCmd = false;
-    cam.yaw = p.h; cam.orbit = 0; acc = 0;
+    setCamDims(cls); cam.snap = true; cam.orbit = 0; cam.pitch = 0; acc = 0;
+    if (p) {
+      const slotOff = cfg ? (p.idx % 2 ? -1 : 1) * Math.ceil(p.idx / 2) * Math.max(10, world.cls.L * 3) : 10 * s;
+      const back = cfg ? 85 * s + (p.idx % 3) * world.cls.L * 2 : 85 * s;
+      p.x = st0.cx + st0.ux * slotOff - st0.n.x * back; p.z = st0.cz + st0.uz * slotOff - st0.n.z * back; p.h = 90 * DEG; p.v = world.cls.polar[8] * 0.5; p.px = p.x; p.pz = p.z;
+      input.sheet = world.autoTrim ? 0 : 0.45; input.easeHold = false; p.sheet = p.sheetT = 0.45; p.kiteCmd = false;
+      cam.yaw = p.h;
+    }
+    spec.follow = -1; spec.zoom = 1; spec.doneSeen = null; spec.allDone = false;
+    document.body.classList.toggle('spectating', !p); document.body.classList.remove('replaying');
     state = 'race'; paused = false;
     $('menu').classList.add('hidden'); $('results').classList.add('hidden'); $('pausedlg').classList.add('hidden');
     $('hud').classList.remove('hidden');
     Sound.init(); Sound.resume(); Sound.horn(1.4);
     toast('Startphase: 1 Minute bis zum Start', 3.5);
     finishedShown = false;
+    Rec.start();
   }
 
   // ---------- Eingabe ----------
@@ -2745,7 +2814,7 @@ void main(){
   $('btack').addEventListener('pointerdown', (e) => { e.preventDefault(); doTack(); });
   function toggleKite() {
     if (!world || paused || state !== 'race') return;
-    const p = world.player, k = world.cls.kite;
+    const p = world.player; if (!p) return; const k = world.cls.kite;
     if (!k) return;
     p.kiteCmd = !p.kiteCmd;
     toast(kiteName() + (p.kiteCmd ? ' wird gesetzt' : ' wird geborgen'), 1.5);
@@ -2761,7 +2830,7 @@ void main(){
   }
   function doTack() {
     if (!world || paused) return;
-    const p = world.player; world.tackOrGybe(p);
+    const p = world.player; if (!p) return; world.tackOrGybe(p);
     const twa = Math.abs(p.twa) / DEG;
     toast(twa < 90 ? 'Wende!' : 'Halse!', 1.2);
   }
@@ -2782,7 +2851,7 @@ void main(){
   });
   const endDrag = () => { drag = null; };
   canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
-  canvas.addEventListener('wheel', (e) => { e.preventDefault(); cam.dist = clamp(cam.dist * (1 + e.deltaY * 0.001), 8, 60); }, { passive: false });
+  canvas.addEventListener('wheel', (e) => { e.preventDefault(); if (isSpectating()) spec.zoom = clamp(spec.zoom * (1 + e.deltaY * 0.001), 0.12, 2.5); else cam.dist = clamp(cam.dist * (1 + e.deltaY * 0.001), 8, 60); }, { passive: false });
   canvas.addEventListener('dblclick', () => { cam.orbit = 0; cam.pitch = 0; });
 
   function cycleCam() { cam.mode = (cam.mode + 1) % 3; cam.orbit = 0; cam.pitch = 0; toast(['Verfolger-Kamera', 'Taktik-Ansicht', 'An Bord'][cam.mode], 1.2); }
@@ -2862,6 +2931,7 @@ void main(){
 
   function showResults() {
     if (state !== 'race') return;
+    Rec.finish();
     finishedShown = true;
     renderResults();
     $('results').classList.remove('hidden');
@@ -2869,7 +2939,7 @@ void main(){
   function renderResults() {
     const rk = world.ranking();
     const best = rk[0].finishT;
-    const p = world.player, place = rk.indexOf(p) + 1;
+    const p = world.player, place = p ? rk.indexOf(p) + 1 : 0;
     $('resplace').textContent = place + '. Platz';
     $('ressub').textContent = place === 1 ? 'Sieg! Starke Leistung an der Pinne.' : place <= 3 ? 'Podium – gut gesegelt!' : 'Weiter üben – Dreher und Trimm entscheiden.';
     $('restable').innerHTML = rk.map((b, i) => `<tr class="${b.isPlayer ? 'me' : ''}"><td>${i + 1}</td><td><span class="dot" style="background:${HEX(b.color)}"></span>${b.name}<small>${b.sailNo}</small></td><td>${b.finishT != null ? fmt(b.finishT) : '<i>segelt</i>'}</td><td>${b.finishT != null && i > 0 ? '+' + (b.finishT - best).toFixed(0) + ' s' : ''}</td></tr>`).join('');
@@ -2895,6 +2965,7 @@ void main(){
   }
   let hudT = 0;
   function updateHUD(dt) {
+    if (!world.player) { updateSpecHUD(dt); return; }
     const p = world.player, t = world.t;
     hudT -= dt;
     toastT -= dt; if (toastT <= 0) $('toast').classList.remove('show');
@@ -3027,14 +3098,14 @@ void main(){
     g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 1; g.beginPath(); g.moveTo(X(C.start.cx), Z(C.start.cz));
     for (const st of C.route) g.lineTo(X(st.p.x), Z(st.p.z));
     g.lineTo(X(C.finish.cx), Z(C.finish.cz)); g.stroke();
-    const tgt = world.nextMark(p);
+    const tgt = p ? world.nextMark(p) : null;
     if (tgt) { g.strokeStyle = 'rgba(255,176,32,0.7)'; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(X(p.x), Z(p.z)); g.lineTo(X(tgt.x), Z(tgt.z)); g.stroke(); g.setLineDash([]); }
     g.strokeStyle = 'rgba(255,255,255,0.8)'; g.setLineDash([3, 3]);
     g.beginPath(); g.moveTo(X(C.start.a.x), Z(C.start.a.z)); g.lineTo(X(C.start.b.x), Z(C.start.b.z)); g.stroke();
     g.strokeStyle = 'rgba(142,197,255,0.9)';
     g.beginPath(); g.moveTo(X(C.finish.a.x), Z(C.finish.a.z)); g.lineTo(X(C.finish.b.x), Z(C.finish.b.z)); g.stroke(); g.setLineDash([]);
     if (settings.help) {
-      const lay = layInfo(p);
+      const lay = p ? layInfo(p) : null;
       if (lay) {
         g.strokeStyle = 'rgba(124,243,195,0.6)';
         for (const brg of lay.brgs) { g.beginPath(); g.moveTo(X(lay.M.x), Z(lay.M.z)); g.lineTo(X(lay.M.x + Math.sin(brg) * 2000), Z(lay.M.z - Math.cos(brg) * 2000)); g.stroke(); }
@@ -3044,7 +3115,7 @@ void main(){
     for (const m of C.marks) dot(m.x, m.z, m.kind === 'cb' ? '#fff' : m.kind === 'lee' ? '#ffc21a' : m.kind === 'fin' ? '#5ab0ff' : '#ff6a13', m.kind === 'small' || m.kind === 'fin' ? 2.5 : 3.5);
     for (const b of world.boats) {
       g.save(); g.translate(X(b.x), Z(b.z)); g.rotate(b.h);
-      g.fillStyle = b.isPlayer ? '#ffb020' : HEX(b.color);
+      g.fillStyle = b.isPlayer || (p == null && spec.follow === world.boats.indexOf(b)) ? '#ffb020' : HEX(b.color);
       g.strokeStyle = b.isPlayer ? '#fff' : 'rgba(255,255,255,0.6)'; g.lineWidth = 1;
       const k = b.isPlayer ? 1.4 : 1;
       g.beginPath(); g.moveTo(0, -5 * k); g.lineTo(3 * k, 4 * k); g.lineTo(-3 * k, 4 * k); g.closePath(); g.fill(); g.stroke();
@@ -3071,6 +3142,7 @@ void main(){
   const lblV = new THREE.Vector3();
   function updateMarkLabel() {
     const p = world.player, el = $('marklabel');
+    if (!p) { el.style.display = 'none'; return; }
     const m = world.nextMark(p);
     if (!m) { el.style.display = 'none'; return; }
     el.style.display = 'block';
@@ -3093,6 +3165,7 @@ void main(){
   // ---------- Kamera ----------
   const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3();
   function updateCamera(dt) {
+    if (!world.player) { spectatorCamera(dt); return; }
     const p = world.player, v = views.find((x) => x.b === p);
     const nowS = performance.now() / 1000;
     if (nowS - cam.lastDrag > 2.5 && cam.mode !== 1) { cam.orbit *= Math.pow(0.25, dt); cam.pitch *= Math.pow(0.3, dt); }
@@ -3330,13 +3403,15 @@ void main(){
   }
   function mpStartRace() {
     if (!mp || mp.role !== 'host') return;
-    const humans = mp.players.slice(0, MAXP);
+    const specOn = $('mpspec').checked;
+    const humans = (specOn ? mp.players.slice(1) : mp.players).slice(0, MAXP);
+    if (!humans.length && !mp.fillAI) { mpMsg('Ohne Mitspieler bitte KI-Boote auffüllen lassen', 'bad'); return; }
     const n = Math.min(MAXP, Math.max(humans.length, mp.fillAI ? 6 : humans.length));
     const fleet = [];
     for (let i = 0; i < n; i++) fleet.push(i < humans.length ? { human: true, name: humans[i].name, id: humans[i].id } : { human: false });
     const cfg = { seed: (Math.random() * 1e9) | 0, cls: SIM.CLASSES[settings.cls] ? settings.cls : '470', course: settings.course, laps: settings.laps, difficulty: settings.difficulty, fleet, t: -60 };
-    mp.cfg = cfg; mp.started = true;
-    for (const h of humans.slice(1)) Net.send(h.id, { type: 'start', cfg, you: h.id });
+    mp.cfg = cfg; mp.started = true; mp.mySlot = specOn ? -1 : 0;
+    for (const h of humans) if (h.id !== 'host') Net.send(h.id, { type: 'start', cfg, you: h.id });
     hideMP(); startRace(cfg);
   }
   function mpTick(dt) {
@@ -3362,8 +3437,9 @@ void main(){
   // Namensschilder anderer Spieler
   const nameTags = [];
   function updateNameTags() {
-    const show = state === 'race' && mp && world;
-    const list = show ? world.boats.filter((b) => b.human && !b.isPlayer) : [];
+    const spectating = isSpectating();
+    const show = (state === 'race' || state === 'replay') && world && (mp || spectating);
+    const list = show ? world.boats.filter((b) => (spectating ? !b.done : b.human && !b.isPlayer)) : [];
     while (nameTags.length < list.length) { const d = document.createElement('div'); d.className = 'nametag'; $('hud').appendChild(d); nameTags.push(d); }
     nameTags.forEach((d, i) => {
       const b = list[i];
@@ -3376,6 +3452,317 @@ void main(){
       d.style.transform = `translate(${(lblV.x * 0.5 + 0.5) * innerWidth}px, ${(-lblV.y * 0.5 + 0.5) * innerHeight}px) translate(-50%, -100%)`;
     });
   }
+
+  // =================== Aufzeichnung, Zuschauer-Ansicht (Totale), Analyse & 3D-Wiedergabe ===================
+  // ---------- Recorder (2 Hz) ----------
+  const Rec = {
+    cur: null,
+    start() {
+      if (!world) return;
+      this.cur = {
+        v: 1,
+        meta: {
+          date: new Date().toISOString(), cls: world.clsKey, course: world.course.type, laps: world.course.laps, seed: world.opts.seed, s: world.s,
+          difficulty: world.opts.difficulty,
+          boats: world.boats.map((b) => ({ name: b.name, sailNo: b.sailNo, color: b.color, human: !!(b.human || b.isPlayer), me: !!b.isPlayer })),
+        },
+        frames: [], next: -1e9,
+      };
+    },
+    tick() {
+      const r = this.cur; if (!r || !world || world.t < r.next) return;
+      r.next = world.t + 0.5;
+      r.frames.push({ t: Math.round(world.t * 100) / 100, gd: Math.round(world.gd * 1e4) / 1e4, gs: Math.round(world.gs * 100) / 100, b: world.boats.map((b) => world.netState(b)) });
+    },
+    finish() {
+      const r = this.cur; if (!r || !r.frames.length) return null;
+      const out = { v: r.v, meta: r.meta, frames: r.frames };
+      try { localStorage.setItem('regatta3d-lastrec', JSON.stringify(out)); } catch (e) {}
+      return out;
+    },
+    snapshot() { const r = this.cur; return r && r.frames.length ? { v: r.v, meta: r.meta, frames: r.frames.slice() } : null; },
+  };
+
+  // ---------- Zuschauer: Totale & Verfolgen ----------
+  const spec = { follow: -1, zoom: 1 };
+  const isSpectating = () => !!world && !world.player && (state === 'race' || state === 'replay');
+  function courseBounds() {
+    const ms = world.course.marks;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const m of ms) { x0 = Math.min(x0, m.x); x1 = Math.max(x1, m.x); z0 = Math.min(z0, m.z); z1 = Math.max(z1, m.z); }
+    for (const b of world.boats) { if (b.done) continue; x0 = Math.min(x0, b.x); x1 = Math.max(x1, b.x); z0 = Math.min(z0, b.z); z1 = Math.max(z1, b.z); }
+    return { cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, ext: Math.max(x1 - x0, z1 - z0, 60) };
+  }
+  const specB = { cx: 0, cz: 0, ext: 300 };
+  function totalCamera(dt) {
+    const b = courseBounds(), k = Math.min(1, dt * 0.8);
+    specB.cx += (b.cx - specB.cx) * k; specB.cz += (b.cz - specB.cz) * k; specB.ext += (b.ext - specB.ext) * k;
+    const d = specB.ext * 0.62 * spec.zoom, a = cam.orbit + 0.55;
+    const h = d * (0.85 + cam.pitch * 0.8);
+    tmpV.set(specB.cx + Math.sin(a) * d, h, specB.cz + Math.cos(a) * d);
+    tmpV2.set(specB.cx, 0, specB.cz);
+    if (cam.pos.lengthSq() === 0 || cam.snap) { cam.pos.copy(tmpV); cam.look.copy(tmpV2); cam.snap = false; }
+    cam.pos.lerp(tmpV, Math.min(1, dt * 2.5)); cam.look.lerp(tmpV2, Math.min(1, dt * 2.5));
+    camera.position.copy(cam.pos); camera.lookAt(cam.look);
+  }
+  function followCamera(dt, b) {
+    const v = views.find((x) => x.b === b); if (!v) return;
+    const S = v.S, L = v.L;
+    const dy = wrap(b.h - cam.yaw); cam.yaw = wrap(cam.yaw + dy * Math.min(1, dt * 1.8));
+    const yaw = cam.yaw + cam.orbit, fx = Math.sin(yaw), fz = -Math.cos(yaw);
+    const dist = clamp(5 + L * 1.9, 8, 48) * spec.zoom, h = 1.4 + L * 0.5 + S.mastH * 0.12 + cam.pitch * dist * 0.8;
+    tmpV.set(b.x - fx * dist, v.y + h, b.z - fz * dist);
+    tmpV2.set(b.x + fx * L * 0.9, v.y + S.deck + S.mastH * 0.28, b.z + fz * L * 0.9);
+    const k = Math.min(1, dt * 3);
+    if (cam.snap) { cam.pos.copy(tmpV); cam.look.copy(tmpV2); cam.snap = false; }
+    cam.pos.lerp(tmpV, k); cam.look.lerp(tmpV2, k);
+    camera.position.copy(cam.pos); camera.lookAt(cam.look);
+  }
+  function spectatorCamera(dt) {
+    const b = spec.follow >= 0 ? world.boats[spec.follow] : null;
+    if (b) followCamera(dt, b); else totalCamera(dt);
+  }
+  // Rangliste im Zuschauer-/Wiedergabemodus
+  let specT = 0;
+  function updateSpecHUD(dt) {
+    specT -= dt; toastT -= dt; if (toastT <= 0) $('toast').classList.remove('show');
+    if (specT > 0) return; specT = 0.25;
+    const t = world.t, rk = world.ranking(), best = rk[0] && rk[0].finishT;
+    if (state === 'race') {
+      spec.doneSeen = spec.doneSeen || new Set();
+      for (const b of rk) if (b.done && !spec.doneSeen.has(b)) { spec.doneSeen.add(b); toast(`${b.name} im Ziel – Platz ${rk.indexOf(b) + 1}`, 2.5, 'good'); }
+      if (rk.length && rk.every((b) => b.done) && !spec.allDone) { spec.allDone = true; setTimeout(() => toast('Alle im Ziel – „Beenden & analysieren“ tippen', 4, 'good'), 2600); }
+    }
+    $('clock').textContent = fmt(t); $('clock').className = t < 0 && t > -10 ? 'warn' : '';
+    const done = rk.filter((b) => b.done).length;
+    $('status').textContent = (state === 'replay' ? 'Wiedergabe · ' : 'Regattaleitung · ') + (t < 0 ? 'Startphase' : done ? `${done}/${rk.length} im Ziel` : 'Rennen läuft');
+    $('status').className = '';
+    const n = world.nLegs;
+    $('speclist').innerHTML = rk.map((b, i) => {
+      const idx = world.boats.indexOf(b);
+      const info = b.done ? fmt(b.finishT) + (i && best != null ? ` <small>+${(b.finishT - best).toFixed(0)}s</small>` : '') : b.leg === 0 ? (b.ocs ? 'Frühstart' : 'Start') : `${b.leg}/${n} · ${b.v.toFixed(1)} kn`;
+      return `<li data-i="${idx}" class="${spec.follow === idx ? 'sel' : ''}"><b>${i + 1}</b><span class="dot" style="background:${HEX(b.color)}"></span><span class="nm">${esc(b.name)}${b.penalty > 0 ? ' ⟲' : ''}</span><span class="inf">${info}</span></li>`;
+    }).join('');
+    $('specfollow').textContent = spec.follow >= 0 ? 'Totale' : 'Totale ✓';
+    drawMap(null);
+  }
+  $('speclist').addEventListener('click', (e) => {
+    const li = e.target.closest('li'); if (!li) return;
+    const i = +li.dataset.i; spec.follow = spec.follow === i ? -1 : i; cam.orbit = 0; cam.pitch = 0; cam.snap = true; specT = 0;
+  });
+  $('specfollow').onclick = () => { spec.follow = -1; cam.orbit = 0; cam.pitch = 0; specT = 0; };
+  $('specana').onclick = () => { const r = state === 'replay' && replay ? replay.rec : Rec.snapshot(); if (r) openAnalysis(r); };
+  $('specend').onclick = () => {
+    if (state === 'replay') { stopReplay(); return; }
+    const r = Rec.finish(); if (r) openAnalysis(r);
+  };
+
+  // ---------- Analyse ----------
+  let ana = null; // { rec, course, t, playing, speed, sel, stats }
+  function frameAt(rec, t) {
+    const F = rec.frames; let lo = 0, hi = F.length - 1;
+    if (t <= F[0].t) return [0, 0, 0];
+    if (t >= F[hi].t) return [hi, hi, 0];
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (F[m].t <= t) lo = m; else hi = m; }
+    return [lo, hi, (t - F[lo].t) / Math.max(1e-6, F[hi].t - F[lo].t)];
+  }
+  const ANG = new Set([2, 5, 7, 8]);
+  function lerpState(a, b, f) {
+    const o = a.slice();
+    for (let k = 0; k < a.length; k++) {
+      if (k >= 13 && k <= 16) { o[k] = f < 0.5 ? a[k] : b[k]; continue; }
+      if (ANG.has(k)) o[k] = a[k] + wrap(b[k] - a[k]) * f; else o[k] = a[k] + (b[k] - a[k]) * f;
+    }
+    return o;
+  }
+  function analyse(rec) {
+    const C = SIM.buildCourse(rec.meta.course, rec.meta.laps, rec.meta.s);
+    const F = rec.frames, nb = rec.meta.boats.length;
+    const stats = rec.meta.boats.map((m, i) => ({ i, name: m.name, color: m.color, human: m.human, me: m.me, track: [], dist: 0, vsum: 0, vn: 0, vmax: 0, tacks: 0, gybes: 0, pens: 0, fly: 0, flyN: 0, start: null, finish: null, splits: [] }));
+    for (let fi = 0; fi < F.length; fi++) {
+      const fr = F[fi];
+      for (let i = 0; i < nb; i++) {
+        const a = fr.b[i], s = stats[i]; if (!a) continue;
+        s.track.push([a[0], a[1], fr.t]);
+        const p = fi ? F[fi - 1].b[i] : null;
+        const racing = a[13] >= 1 && !a[14];
+        if (p) {
+          if (racing || (a[14] && !p[14])) s.dist += Math.hypot(a[0] - p[0], a[1] - p[1]);
+          if (racing && Math.sign(a[7]) !== Math.sign(p[7]) && Math.abs(a[7]) > 0.05 && Math.abs(p[7]) > 0.05) { if (Math.abs(a[7]) < Math.PI / 2) s.tacks++; else s.gybes++; }
+          if (a[16] > 0 && !(p[16] > 0)) s.pens++;
+          if (a[13] > p[13] && !a[14]) { if (p[13] === 0) s.start = fr.t; else s.splits.push({ leg: p[13], t: fr.t }); }
+        }
+        if (racing) { s.vsum += a[3]; s.vn++; s.vmax = Math.max(s.vmax, a[3]); s.fly += a[11] > 0.5 ? 1 : 0; s.flyN++; }
+        if (a[14] && s.finish == null) s.finish = a[15] >= 0 ? a[15] : fr.t;
+      }
+    }
+    for (const s of stats) { s.vavg = s.vn ? s.vsum / s.vn : 0; s.flyP = s.flyN ? (100 * s.fly) / s.flyN : 0; }
+    const ranked = stats.slice().sort((a, b) => (a.finish == null) - (b.finish == null) || (a.finish || 0) - (b.finish || 0) || b.splits.length - a.splits.length);
+    ranked.forEach((s, k) => (s.place = k + 1));
+    return { C, stats, ranked, t0: F[0].t, t1: F[F.length - 1].t };
+  }
+  function openAnalysis(rec) {
+    if (!rec || !rec.frames || rec.frames.length < 2) { toast('Noch keine Aufzeichnung vorhanden', 2); return; }
+    const A = analyse(rec);
+    const me = A.stats.find((s) => s.me);
+    ana = { rec, ...A, t: A.t1, playing: false, speed: 8, sel: me ? me.i : -1 };
+    $('ana').classList.remove('hidden');
+    const m = rec.meta, C = SIM.CLASSES[m.cls];
+    $('anameta').textContent = `${C ? C.name : m.cls} · ${SIM.COURSES[m.course] ? SIM.COURSES[m.course].name : m.course} · ${m.laps} Runde(n) · ${new Date(m.date).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}`;
+    const sl = $('anaslider'); sl.min = A.t0; sl.max = A.t1; sl.step = 0.5; sl.value = A.t1;
+    renderAnaTable(); drawAna();
+  }
+  function closeAnalysis() { $('ana').classList.add('hidden'); if (ana) ana.playing = false; }
+  function renderAnaTable() {
+    const A = ana, legs = A.C.route.length;
+    const best = A.ranked[0] && A.ranked[0].finish;
+    $('anatable').innerHTML = '<tr><th>#</th><th>Boot</th><th>Zeit</th><th>Ø kn</th><th>max</th><th>Strecke</th><th>W/H</th><th>Strafen</th>' + (SIM.CLASSES[A.rec.meta.cls] && SIM.CLASSES[A.rec.meta.cls].foil && !SIM.CLASSES[A.rec.meta.cls].foil.partial ? '<th>Foil</th>' : '') + '</tr>' +
+      A.ranked.map((s) => `<tr data-i="${s.i}" class="${A.sel === s.i ? 'sel' : ''} ${s.me ? 'me' : ''}"><td>${s.place}</td><td><span class="dot" style="background:${HEX(s.color)}"></span>${esc(s.name)}</td><td>${s.finish != null ? fmt(s.finish) + (best != null && s.finish > best ? `<small> +${(s.finish - best).toFixed(0)}s</small>` : '') : '–'}</td><td>${s.vavg.toFixed(1)}</td><td>${s.vmax.toFixed(1)}</td><td>${(s.dist / SIM.SPEED_SCALE / 1852).toFixed(2)} sm</td><td>${s.tacks}/${s.gybes}</td><td>${s.pens}</td>${SIM.CLASSES[A.rec.meta.cls] && SIM.CLASSES[A.rec.meta.cls].foil && !SIM.CLASSES[A.rec.meta.cls].foil.partial ? `<td>${s.flyP.toFixed(0)}%</td>` : ''}</tr>`).join('');
+    // Schenkelzeiten des ausgewählten Boots
+    const s = A.stats[A.sel];
+    if (!s) { $('anasplits').innerHTML = '<p class="hint">Boot in der Tabelle antippen für Schenkelzeiten und hervorgehobenen Kurs.</p>'; return; }
+    const names = A.C.route.map((st) => (st.t === 'gate' ? st.name : st.m.name));
+    let prev = s.start, rows = '';
+    s.splits.forEach((sp, k) => {
+      const placeAt = A.stats.filter((o) => o.splits[k] && o.splits[k].t <= sp.t).length;
+      rows += `<tr><td>${k + 1}</td><td>${esc(names[k] || '')}</td><td>${fmt(sp.t)}</td><td>${prev != null ? (sp.t - prev).toFixed(0) + ' s' : ''}</td><td>${placeAt}.</td></tr>`;
+      prev = sp.t;
+    });
+    if (s.finish != null) rows += `<tr><td>${legs + 1}</td><td>Ziel</td><td>${fmt(s.finish)}</td><td>${prev != null ? (s.finish - prev).toFixed(0) + ' s' : ''}</td><td>${s.place}.</td></tr>`;
+    $('anasplits').innerHTML = `<h3><span class="dot" style="background:${HEX(s.color)}"></span>${esc(s.name)} – Schenkel</h3><table><tr><th>#</th><th>Tonne</th><th>Zeit</th><th>Schenkel</th><th>Platz</th></tr>${rows || '<tr><td colspan="5">noch keine Rundung</td></tr>'}</table>` +
+      `<p class="hint">Start: ${s.start != null ? fmt(s.start) + ' (' + (s.start).toFixed(1) + ' s nach dem Signal)' : '–'}</p>`;
+  }
+  function drawAna() {
+    if (!ana) return;
+    const c = $('anamap'), d = fitCanvas(c), W = c.width / d, H = c.height / d, g = c.getContext('2d');
+    g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, W, H);
+    const A = ana, C = A.C;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    const grow = (x, z) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); };
+    C.marks.forEach((m) => grow(m.x, m.z));
+    A.stats.forEach((s) => s.track.forEach((p) => { if (p[2] > -15) grow(p[0], p[1]); }));
+    const pad = 30, sc = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (z1 - z0 || 1));
+    const ox = W / 2 - ((x0 + x1) / 2) * sc, oz = H / 2 - ((z0 + z1) / 2) * sc;
+    const X = (x) => ox + x * sc, Z = (z) => oz + z * sc;
+    g.fillStyle = '#0b2440'; g.fillRect(0, 0, W, H);
+    // Linien & Tonnen
+    g.setLineDash([4, 4]); g.lineWidth = 1.2;
+    g.strokeStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.moveTo(X(C.start.a.x), Z(C.start.a.z)); g.lineTo(X(C.start.b.x), Z(C.start.b.z)); g.stroke();
+    g.strokeStyle = 'rgba(142,197,255,0.9)'; g.beginPath(); g.moveTo(X(C.finish.a.x), Z(C.finish.a.z)); g.lineTo(X(C.finish.b.x), Z(C.finish.b.z)); g.stroke();
+    g.setLineDash([]);
+    for (const m of C.marks) { g.fillStyle = m.kind === 'cb' ? '#fff' : m.kind === 'lee' ? '#ffc21a' : m.kind === 'fin' ? '#5ab0ff' : '#ff6a13'; g.beginPath(); g.arc(X(m.x), Z(m.z), m.kind === 'cb' ? 4 : 3.5, 0, Math.PI * 2); g.fill(); }
+    // Kurse bis zur aktuellen Zeit
+    const t = A.t;
+    for (const s of A.stats) {
+      const hi = A.sel === s.i, faded = A.sel >= 0 && !hi;
+      g.strokeStyle = HEX(s.color); g.globalAlpha = faded ? 0.22 : 0.9; g.lineWidth = hi ? 2.6 : 1.4;
+      g.beginPath(); let first = true;
+      for (const p of s.track) { if (p[2] > t) break; if (p[2] < -12) continue; if (first) { g.moveTo(X(p[0]), Z(p[1])); first = false; } else g.lineTo(X(p[0]), Z(p[1])); }
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+    // Boote zur Zeit t
+    const [i0, i1, f] = frameAt(A.rec, t);
+    const fa = A.rec.frames[i0], fb = A.rec.frames[i1];
+    A.stats.forEach((s, i) => {
+      const a = lerpState(fa.b[i], fb.b[i], f);
+      g.save(); g.translate(X(a[0]), Z(a[1])); g.rotate(a[2]);
+      g.fillStyle = HEX(s.color); g.strokeStyle = A.sel === i ? '#ffb020' : '#fff'; g.lineWidth = A.sel === i ? 2 : 1;
+      g.beginPath(); g.moveTo(0, -7); g.lineTo(4.5, 5); g.lineTo(-4.5, 5); g.closePath(); g.fill(); g.stroke(); g.restore();
+      if (A.sel === i || s.me) { g.fillStyle = '#fff'; g.font = '600 11px Inter, sans-serif'; g.fillText(s.name, X(a[0]) + 8, Z(a[1]) - 6); }
+    });
+    // Wind
+    const gd = fa.gd + wrap(fb.gd - fa.gd) * f;
+    g.save(); g.translate(W - 22, 22); g.rotate(gd); g.strokeStyle = '#5ab0ff'; g.fillStyle = '#5ab0ff'; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(0, -12); g.lineTo(0, 8); g.stroke(); g.beginPath(); g.moveTo(0, 13); g.lineTo(5, 5); g.lineTo(-5, 5); g.fill(); g.restore();
+    g.fillStyle = 'rgba(255,255,255,0.8)'; g.font = '600 11px Inter, sans-serif'; g.textAlign = 'right';
+    g.fillText(`${(fa.gs + (fb.gs - fa.gs) * f).toFixed(1)} kn  ${((gd / DEG) >= 0 ? '+' : '') + (gd / DEG).toFixed(0)}°`, W - 38, 26); g.textAlign = 'left';
+    $('anatime').textContent = fmt(t);
+    $('anaplay').textContent = A.playing ? '❚❚' : '▶';
+  }
+  $('anatable').addEventListener('click', (e) => {
+    const tr = e.target.closest('tr[data-i]'); if (!tr || !ana) return;
+    const i = +tr.dataset.i; ana.sel = ana.sel === i ? -1 : i; renderAnaTable(); drawAna();
+  });
+  $('anaslider').addEventListener('input', (e) => { if (!ana) return; ana.t = +e.target.value; ana.playing = false; drawAna(); });
+  $('anaplay').onclick = () => { if (!ana) return; if (ana.t >= ana.t1) ana.t = ana.t0; ana.playing = !ana.playing; drawAna(); };
+  $('anaspeed').onchange = (e) => { if (ana) ana.speed = +e.target.value; };
+  $('anaclose').onclick = closeAnalysis;
+  $('ana3d').onclick = () => { if (!ana) return; const r = ana.rec, t = ana.t <= ana.t0 + 1 || ana.t >= ana.t1 ? r.frames[0].t : ana.t, sel = ana.sel; closeAnalysis(); startReplay(r, t, sel); };
+  $('anasave').onclick = () => {
+    if (!ana) return;
+    try {
+      const blob = new Blob([JSON.stringify({ v: ana.rec.v, meta: ana.rec.meta, frames: ana.rec.frames })], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      const m = ana.rec.meta; a.download = `regatta_${m.cls}_${m.course}_${m.date.slice(0, 16).replace(/[:T]/g, '-')}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('Aufzeichnung gespeichert (Download)', 2);
+    } catch (e) { toast('Speichern ist hier nicht möglich', 2.5, 'bad'); }
+  };
+  function loadRecFile(file) {
+    const fr = new FileReader();
+    fr.onload = () => { try { const r = JSON.parse(fr.result); if (!r.frames || !r.meta) throw 0; openAnalysis(r); } catch (e) { toast('Datei ist keine Regatta-Aufzeichnung', 2.5, 'bad'); } };
+    fr.readAsText(file);
+  }
+  $('anaload').onchange = (e) => { const f = e.target.files && e.target.files[0]; if (f) loadRecFile(f); e.target.value = ''; };
+  $('menuload').onchange = (e) => { const f = e.target.files && e.target.files[0]; if (f) loadRecFile(f); e.target.value = ''; };
+  $('menulast').onclick = () => {
+    let r = null; try { r = JSON.parse(localStorage.getItem('regatta3d-lastrec') || 'null'); } catch (e) {}
+    if (r) openAnalysis(r); else toast('Noch kein Rennen aufgezeichnet', 2);
+  };
+  $('resana').onclick = () => { const r = Rec.finish() || Rec.snapshot(); if (r) { $('results').classList.add('hidden'); openAnalysis(r); } };
+  function anaTick(dt) {
+    if (!ana || $('ana').classList.contains('hidden') || !ana.playing) return;
+    ana.t = Math.min(ana.t1, ana.t + dt * ana.speed);
+    if (ana.t >= ana.t1) ana.playing = false;
+    $('anaslider').value = ana.t; drawAna();
+  }
+
+  // ---------- 3D-Wiedergabe ----------
+  let replay = null;
+  function startReplay(rec, t, sel) {
+    for (const v of views) v.dispose();
+    spray.clear();
+    const m = rec.meta;
+    const fleet = m.boats.map((b, i) => ({ ...FLEET[i % FLEET.length], name: b.name, sailNo: b.sailNo, color: b.color, isPlayer: false, human: b.human }));
+    world = new World({ seed: m.seed, difficulty: m.difficulty || 'medium', fleet, autoTrim: true, cls: m.cls, course: m.course, laps: m.laps });
+    world.clsKey = m.cls;
+    world.player = undefined;
+    world.boats.forEach((b) => { b.remote = true; });
+    buildMarks(world.course);
+    views = world.boats.map((b) => new BoatView(b, m.cls));
+    replay = { rec, t, speed: 1, playing: true };
+    spec.follow = sel != null && sel >= 0 ? sel : -1; spec.zoom = 1; cam.orbit = 0; cam.pitch = 0; cam.snap = true;
+    state = 'replay'; paused = false;
+    $('menu').classList.add('hidden'); $('results').classList.add('hidden');
+    $('hud').classList.remove('hidden'); document.body.classList.add('spectating', 'replaying');
+    const sl = $('rslider'); sl.min = rec.frames[0].t; sl.max = rec.frames[rec.frames.length - 1].t; sl.step = 0.5; sl.value = t;
+    applyReplay(0);
+  }
+  function applyReplay(dt) {
+    const r = replay, F = r.rec.frames;
+    if (r.playing) r.t = Math.min(F[F.length - 1].t, r.t + dt * r.speed);
+    if (r.t >= F[F.length - 1].t) r.playing = false;
+    const [i0, i1, f] = frameAt(r.rec, r.t), fa = F[i0], fb = F[i1];
+    world.t = r.t; world.gd = fa.gd + wrap(fb.gd - fa.gd) * f; world.gs = fa.gs + (fb.gs - fa.gs) * f;
+    world.boats.forEach((b, i) => {
+      const a = lerpState(fa.b[i], fb.b[i], f);
+      world.applyNet(b, a); b.x = a[0]; b.z = a[1]; b.h = a[2]; b.px = b.x; b.pz = b.z;
+    });
+    $('rslider').value = r.t; $('rtime').textContent = fmt(r.t); $('rplay').textContent = r.playing ? '❚❚' : '▶';
+  }
+  function stopReplay() {
+    replay = null; state = 'menu'; document.body.classList.remove('spectating', 'replaying');
+    $('hud').classList.add('hidden'); resetMenuScene(); $('menu').classList.remove('hidden');
+  }
+  $('rplay').onclick = () => { if (!replay) return; const F = replay.rec.frames; if (replay.t >= F[F.length - 1].t) replay.t = F[0].t; replay.playing = !replay.playing; };
+  $('rspeed').onchange = (e) => { if (replay) replay.speed = +e.target.value; };
+  $('rslider').addEventListener('input', (e) => { if (!replay) return; replay.t = +e.target.value; });
+  $('rexit').onclick = () => stopReplay();
+  $('rana').onclick = () => { if (replay) { const r = replay.rec, t = replay.t; openAnalysis(r); ana.t = t; $('anaslider').value = t; drawAna(); } };
+  $('specin').onclick = () => { spec.zoom = clamp(spec.zoom * 0.75, 0.12, 2.5); };
+  $('specout').onclick = () => { spec.zoom = clamp(spec.zoom / 0.75, 0.12, 2.5); };
 
   // ---------- Hauptschleife ----------
   function resize() {
@@ -3402,24 +3789,27 @@ void main(){
         if (keys.in) input.sheet = clamp(input.sheet - dt * 0.45, 0, 1);
         if (keys.out) input.sheet = clamp(input.sheet + dt * 0.45, 0, 1);
       }
-      acc += dt;
-      while (acc >= 1 / 60) { world.step(1 / 60, state === 'race' ? input : null); acc -= 1 / 60; }
-      if (state === 'race') handleEvents(); else world.events.length = 0;
+      if (state === 'replay') { applyReplay(dt); world.events.length = 0; }
+      else {
+        acc += dt;
+        while (acc >= 1 / 60) { world.step(1 / 60, state === 'race' ? input : null); acc -= 1 / 60; }
+        if (state === 'race') { Rec.tick(); handleEvents(); } else world.events.length = 0;
+      }
       for (const v of views) v.update(dt, visTime);
       spray.update(dt);
       // Böen an den Shader
       world.puffs.forEach((pf, i) => puffU[i].set(pf.x, pf.z, pf.r, pf.s * world.env(pf)));
       // ruhige Wasserfläche unter jedem Rumpf
-      for (let i = 0; i < 8; i++) boatU.P[i].w = 0;
+      for (let i = 0; i < 13; i++) boatU.P[i].w = 0;
       views.forEach((v, i) => {
-        if (i > 6) return;
+        if (i > 11) return;
         const b = v.b, S = v.S, foil = SIM.CLASSES[v.key].foil;
         const wgt = foil && !foil.partial ? 1 - clamp((b.fly || 0) * 1.5, 0, 1) : 1;
         boatU.P[i].set(b.x, b.z, v.y0, wgt);
         boatU.Q[i].set(Math.sin(b.h), Math.cos(b.h), v.L * 0.5, S.hull.B * 0.5);
         boatU.G[i].set(Math.tan(v.pitch), Math.tan(v.roll), S.cat ? S.hullX : 0, S.hull.bowW || 0);
       });
-      { const cb = markObjs.find((m) => m.big); if (cb) { boatU.P[7].set(cb.ref.x, cb.ref.z, cb.o.position.y, 1); boatU.Q[7].set(0, 1, 4.5, 1.5); boatU.G[7].set(0, 0, 0, 0); } }
+      { const cb = markObjs.find((m) => m.big); if (cb) { boatU.P[12].set(cb.ref.x, cb.ref.z, cb.o.position.y, 1); boatU.Q[12].set(0, 1, 4.5, 1.5); boatU.G[12].set(0, 0, 0, 0); } }
       oceanMat.uniforms.uWindV.value.set(-Math.sin(world.gd), Math.cos(world.gd));
       for (const m of markObjs) {
         const h = waveH(m.ref.x, m.ref.z, visTime);
@@ -3435,6 +3825,7 @@ void main(){
         pa.needsUpdate = true;
       }
     }
+    anaTick(dt);
     // Kamera
     if (state === 'menu') {
       const a = visTime * 0.05;
@@ -3449,28 +3840,29 @@ void main(){
       updateMarkLabel();
       updateNameTags();
       const p = world.player;
-      if (running) Sound.update(p, visTime);
+      if (running && p) Sound.update(p, visTime);
       if (finishedShown && !$('results').classList.contains('hidden')) { layT += dt; if (layT > 1) { layT = 0; renderResults(); } }
     }
     // Hilfslinien
-    const showHelp = state === 'race' && settings.help;
-    const pl = world.player, R0 = world.course.route;
+    const showHelp = (state === 'race' || state === 'replay') && settings.help;
+    const pl = world.player || { leg: world.t < 0 ? 0 : 99, done: false, spec: true }, R0 = world.course.route;
     startLine.visible = showHelp && pl.leg === 0;
-    finishLine.visible = showHelp && pl.leg > R0.length && !pl.done;
-    const gst = pl.leg >= 1 && pl.leg <= R0.length ? R0[pl.leg - 1] : null;
+    finishLine.visible = showHelp && (pl.spec || (pl.leg > R0.length && !pl.done));
+    const gst = !pl.spec && pl.leg >= 1 && pl.leg <= R0.length ? R0[pl.leg - 1] : null;
     gateLine.visible = showHelp && !!gst && gst.t === 'gate';
     if (gateLine.visible && gateLine.userData.st !== gst) { gateLine.userData.st = gst; setLine(gateLine, gst.a, gst.b, 0); }
-    const lay = showHelp ? layInfo(world.player) : null;
+    const lay = showHelp && world.player ? layInfo(world.player) : null;
     laylines.forEach((l, i) => { l.visible = !!lay; if (lay) setLayline(l, lay.M, lay.brgs[i], 900); });
     // Ozean & Himmel folgen der Kamera
     { // feines Raster folgt dem Boot im Fokus
-      const fv = state === 'race' ? views.find((v) => v.b === world.player) : views[2];
+      const fb = isSpectating() ? (spec.follow >= 0 ? world.boats[spec.follow] : null) : state === 'race' ? world.player : null;
+      const fv = fb ? views.find((v) => v.b === fb) : state === 'menu' ? views[2] : null;
       const fx = fv ? fv.b.x : camera.position.x, fz = fv ? fv.b.z : camera.position.z, sn = OCEAN_D * 2;
       ocean.position.set(Math.round(fx / sn) * sn, 0, Math.round(fz / sn) * sn);
     }
     camXZ.x = camera.position.x; camXZ.z = camera.position.z;
     sky.position.copy(camera.position);
-    const fp = state === 'race' ? world.player : (views[2] ? views[2].b : { x: 0, z: 0 });
+    const fp = isSpectating() ? (spec.follow >= 0 ? world.boats[spec.follow] : { x: specB.cx, z: specB.cz }) : state === 'race' ? world.player : (views[2] ? views[2].b : { x: 0, z: 0 });
     sun.position.set(fp.x + sunDir.x * 80, sunDir.y * 80, fp.z + sunDir.z * 80);
     sun.target.position.set(fp.x, 0, fp.z);
     renderer.render(scene, camera);

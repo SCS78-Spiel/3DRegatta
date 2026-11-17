@@ -18,6 +18,13 @@ Ein 3D-Segelspiel im Browser. Bis zu 12 Leute segeln live gegeneinander; der Hos
    (oder Seite öffnen → Mehrspieler → Code eingeben).
 4. Sind alle in der Liste, startet der Host mit **Rennen starten**. Freie Plätze bis 6 Boote füllen KI-Boote auf (abschaltbar).
 
+## Regattaleitung & Analyse
+
+- Im Mehrspieler-Menü **„Ich segle nicht mit – Regattaleitung“** ankreuzen: Der Host segelt nicht mit, sieht das ganze Feld in der Totalen (Rangliste antippen = Boot verfolgen, ziehen = drehen, Mausrad/＋－ = Zoom) und das Rennen wird aufgezeichnet.
+- **Beenden & analysieren** öffnet die Rennanalyse: alle Kurse auf der Karte, Zeitleiste zum Abspielen, Tabelle mit Zeiten, Ø-/Max-Speed, Strecke, Wenden/Halsen, Strafen und Schenkelzeiten je Boot.
+- **3D-Wiedergabe ab hier** spielt das Rennen in 3D nach (1×–16×, Totale oder einzelnes Boot verfolgen).
+- **Aufzeichnung speichern** lädt eine .json-Datei herunter; über **Aufzeichnung laden** im Hauptmenü lässt sie sich später wieder analysieren. Jedes Rennen (auch Einzelspieler) wird automatisch aufgezeichnet – „Letztes Rennen analysieren“ im Menü.
+
 ## Gut zu wissen
 
 - Der **Host muss das Spiel offen und im Vordergrund lassen** – sein Browser steuert die KI-Boote und verteilt die Positionen.
