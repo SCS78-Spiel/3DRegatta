@@ -63,7 +63,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1e33;font-family:In
 #sheettrack{position:relative;width:54px;height:170px;border-radius:16px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);touch-action:none;cursor:ns-resize}
 #sheettrack:before{content:"";position:absolute;left:50%;top:10px;bottom:10px;width:3px;margin-left:-1.5px;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.5) 0 6px,transparent 6px 10px);border-radius:2px}
 #sheetknob{position:absolute;left:50%;width:44px;height:26px;margin:-13px 0 0 -22px;border-radius:9px;background:var(--acc);box-shadow:0 3px 10px rgba(0,0,0,.35);display:grid;place-items:center;color:#1b1300;font-weight:800;font-size:11px}
-#sheetctl.auto #sheettrack{opacity:.4}
+#sheetctl.auto #sheettrack:after{content:"AUTO";position:absolute;top:6px;left:0;right:0;text-align:center;font-size:9px;font-weight:800;letter-spacing:1px;opacity:.75}
+#bease{pointer-events:auto;width:84px;margin-top:8px;padding:7px 4px;border-radius:12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-family:inherit;font-weight:800;font-size:12px;line-height:1.15;cursor:pointer;touch-action:none}
+#bease small{font-weight:600;opacity:.8;font-size:10px}
+#bease.on{background:rgba(90,176,255,.8);color:#06213a}
 #bkite{pointer-events:auto;width:84px;margin-bottom:8px;padding:7px 4px;border-radius:12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-family:inherit;font-weight:800;font-size:12px;line-height:1.15;cursor:pointer;touch-action:none}
 #bkite small{font-weight:600;opacity:.8;font-size:10px}
 #bkite.up{background:rgba(255,176,32,.85);color:#1b1300}
@@ -133,10 +136,11 @@ tr.me td{color:var(--acc);font-weight:700}
   #side button{width:34px;height:34px}
   #instr{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom));padding:6px 10px;gap:8px}
   #rose{width:84px;height:84px}
-  #trim{width:150px}
+  #trim{width:128px}
+  #instr{left:calc(50% - 24px)!important}
   #tt,#tt svg{height:30px}
   #steer .arrow{width:66px;height:66px}
-  #sheettrack{height:150px;width:50px}
+  #sheettrack{height:120px;width:50px}
   #toast{font-size:15px;top:30%}
   .card h1{font-size:36px}
 }
@@ -174,7 +178,7 @@ tr.me td{color:var(--acc);font-weight:700}
   </div>
   <div id="toast"></div>
   <div id="marklabel"></div>
-  <div id="keys" class="panel"><b>←</b><b>→</b> steuern (Shift = fein)<br><b>↑</b> dichtholen · <b>↓</b> fieren<br><b>Leer</b> Wende/Halse · <b>G</b> Spi/Gennaker<br><b>C</b> Kamera · <b>H</b> Hilfen · <b>P</b> Pause<br> · Maus ziehen = umsehen</div>
+  <div id="keys" class="panel"><b>←</b><b>→</b> steuern (Shift = fein)<br><b>↑</b> dichtholen · <b>↓</b> fieren · <b>F</b> ganz fieren (halten)<br><b>Leer</b> Wende/Halse · <b>G</b> Spi/Gennaker<br><b>C</b> Kamera · <b>H</b> Hilfen · <b>P</b> Pause<br> · Maus ziehen = umsehen</div>
   <div id="bottom">
     <div id="steer"><button class="arrow" id="bl">◀</button><button id="btack">Wende</button><button class="arrow" id="br">▶</button></div>
     <div id="instr" class="panel">
@@ -192,7 +196,7 @@ tr.me td{color:var(--acc);font-weight:700}
         <div class="scale"><span>dicht</span><span>Großschot</span><span>lose</span></div>
       </div>
     </div>
-    <div id="sheetctl"><button id="bkite">Gennaker<br><small>setzen</small></button><span class="t">dicht</span><div id="sheettrack"><div id="sheetknob">≡</div></div><span class="t">lose</span></div>
+    <div id="sheetctl"><button id="bkite">Gennaker<br><small>setzen</small></button><span class="t">dicht</span><div id="sheettrack"><div id="sheetknob">≡</div></div><span class="t">lose</span><button id="bease">Fieren<br><small>halten</small></button></div>
   </div>
 </div>
 
@@ -613,8 +617,10 @@ const SIM = (() => {
         if (Math.abs(err) < 2 * DEG) b.autoH = null;
       }
       b.rudderT = rT;
-      if (this.autoTrim) b.sheetT = clamp((idealBoom(b.awa) - 3) / 82, 0, 1);
-      else b.sheetT = clamp(inp.sheet != null ? inp.sheet : b.sheetT, 0, 1);
+      const manual = inp.easeHold ? 1 : clamp(inp.sheet != null ? inp.sheet : b.sheetT, 0, 1);
+      // Auto-Trimm hält die Schot optimal; der Spieler kann zusätzlich fieren (nie dichter als optimal)
+      if (this.autoTrim) { b.autoSheet = clamp((idealBoom(b.awa) - 3) / 82, 0, 1); b.sheetT = Math.max(b.autoSheet, manual); }
+      else b.sheetT = manual;
     }
     tackOrGybe(b) {
       const twa = wrap(b.twd - b.h);
@@ -1548,7 +1554,8 @@ void main(){
   // =================== Bootsklassen: 3D-Modelle & Segler ===================
   const SPECS = {
     opti: {
-      deck: 0.3, hull: { L: 2.31, B: 1.13, sheer: 0.3, rise: 0.1, depth: 0.15, bowW: 0.6, flat: true },
+      deck: 0.3, hull: { L: 2.31, B: 1.13, sheer: 0.3, rise: 0.1, depth: 0.15, bowW: 0.6, flat: true, rake: 0.05, camber: 0.02 },
+      cockpit: { z0: -0.88, z1: 1.0, inset: 0.09, floor: 0.06 },
       mastZ: -0.78, mastH: 2.35, mastR: 0.028, mastColor: 0xb9bec4, boomY: 0.28,
       main: { luff: 2.0, foot: 2.0, head: 1.45, peakRise: 0.75, roach: 0, camber: 0.13, tex: 'dacron' },
       jib: null, kite: null, rig: 'none', app: 'opti', kid: true,
@@ -1556,6 +1563,7 @@ void main(){
     },
     '470': {
       deck: 0.42, hull: { L: 4.7, B: 1.68, sheer: 0.42, rise: 0.15, depth: 0.24 },
+      cockpit: { z0: -1.05, z1: 2.1, inset: 0.3, floor: 0.1 },
       mastZ: -0.55, mastH: 6.78, mastR: 0.045, mastColor: 0xc9ccd0, boomY: 0.5,
       main: { luff: 6.0, foot: 2.4, head: 0.14, roach: 0.12, camber: 0.11, tex: 'dacron' },
       jib: { headH: 5.0, foot: 1.75 }, kite: { type: 'sym' }, rig: 'std', app: 'dinghy',
@@ -1598,10 +1606,13 @@ void main(){
   };
 
   // ---------- Rumpf ----------
+  // Linienriss: Spantform, Bug-/Heckfall, Decksbucht, optional offenes Cockpit.
   function makeHull(h, color, opts = {}) {
     const { L, B } = h;
-    const NS = 36, NJ = 12;
-    const bw = h.bowW || 0;
+    const NS = 44, NJ = 14;
+    const bw = h.bowW || 0, sc = L / 5;
+    const rake = h.rake != null ? h.rake : 0.12 * sc * (bw > 0 ? 0.4 : 1);
+    const trake = h.trake != null ? h.trake : -0.04 * sc;
     const sheerH = (t) => h.sheer + h.rise * Math.pow(1 - t, 2.2);
     const halfW = (t) => {
       const a = Math.min(t / 0.55, 1);
@@ -1609,30 +1620,44 @@ void main(){
       if (t > 0.55) w *= 1 - 0.16 * Math.pow((t - 0.55) / 0.45, 1.6);
       return (B / 2) * w;
     };
-    const depth = (t) => h.depth * Math.pow(Math.sin(Math.PI * (0.04 + 0.9 * t)), 0.75) + 0.02 * L / 5;
-    const ex = h.flat ? 0.22 : 0.55, ey = h.flat ? 2.4 : 1.25;
-    const P = [], C = [], I = [];
-    const hc = lin(color), stripe = lin(opts.stripe || 0xf4f4f0), bottom = lin(opts.bottom || 0x1c2026);
-    const stripeH = 0.07 * Math.max(1, L / 5);
+    const depth = (t) => h.depth * Math.pow(Math.sin(Math.PI * (0.04 + 0.9 * t)), 0.75) + 0.02 * sc;
+    const ex = h.flat ? 0.22 : 0.5, ey = h.flat ? 2.4 : 1.35;
+    // Punkt auf der Außenhaut: Station t, Umfangsparameter q (0 = Deckskante, 1 = Kiel)
+    const skin = (t, q, side) => {
+      const w = halfW(t), sh = sheerH(t), d = depth(t);
+      const ph = q * Math.PI / 2;
+      // leichter Ausfall (Flare) nach oben
+      const flare = 1 + 0.06 * (1 - q) * (h.flat ? 0.3 : 1);
+      const x = side * w * Math.pow(Math.cos(ph), ex) * flare;
+      const y = sh - (sh + d) * Math.pow(Math.sin(ph), ey);
+      const yn = (y + d) / (sh + d);
+      let z = -L / 2 + t * L;
+      z += -rake * yn * Math.max(0, 1 - t / 0.18);
+      z += trake * yn * Math.max(0, (t - 0.88) / 0.12);
+      return [x, y, z];
+    };
+    const P = [], UV = [], C = [], I = [];
+    const below = new THREE.Color(0.16, 0.16, 0.18), white = new THREE.Color(1, 1, 1);
     for (const side of [1, -1]) {
       const base = P.length / 3;
       for (let i = 0; i <= NS; i++) {
-        const t = i / NS, z = -L / 2 + t * L, w = halfW(t), sh = sheerH(t), d = depth(t);
+        const t = i / NS;
         for (let j = 0; j <= NJ; j++) {
-          const ph = (j / NJ) * Math.PI / 2;
-          P.push(side * w * Math.pow(Math.cos(ph), ex), sh - (sh + d) * Math.pow(Math.sin(ph), ey), z);
-          const y = P[P.length - 2];
-          const c = y > sh - stripeH ? stripe : y < -0.04 * Math.max(1, L / 5) ? bottom : hc;
+          const q = j / NJ, p = skin(t, q, side);
+          P.push(...p);
+          // UV: obere Hälfte der Textur = Steuerbord (Bug rechts), untere = Backbord (Bug links)
+          UV.push(side > 0 ? 1 - t : t, side > 0 ? 1 - 0.5 * q : 0.5 - 0.5 * q);
+          const c = p[1] < -0.035 * Math.max(1, sc) ? below : white;
           C.push(c.r, c.g, c.b);
         }
       }
       for (let i = 0; i < NS; i++) for (let j = 0; j < NJ; j++) {
-        const a = base + i * (NJ + 1) + j, b = a + NJ + 1;
-        I.push(a, b, a + 1, a + 1, b, b + 1);
+        const a = base + i * (NJ + 1) + j, bb = a + NJ + 1;
+        I.push(a, bb, a + 1, a + 1, bb, bb + 1);
       }
     }
     const closeEnd = (i, t) => {
-      const c = P.length / 3; P.push(0, (sheerH(t) - depth(t)) / 2, -L / 2 + t * L); C.push(hc.r, hc.g, hc.b);
+      const c = P.length / 3; const m = skin(t, 0.5, 1); P.push(0, (sheerH(t) - depth(t)) / 2, m[2]); UV.push(0.5, 0.75); C.push(1, 1, 1);
       const o1 = i * (NJ + 1), o2 = (NS + 1) * (NJ + 1) + i * (NJ + 1);
       for (let j = 0; j < NJ; j++) { I.push(c, o1 + j, o1 + j + 1, c, o2 + j, o2 + j + 1); }
     };
@@ -1640,19 +1665,96 @@ void main(){
     if (bw > 0) closeEnd(0, 0);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
     g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
     g.setIndex(I); g.computeVertexNormals();
-    const D = [];
+    // Deck mit Decksbucht, ggf. mit Cockpit-Ausschnitt
+    const ck = opts.cockpit, camber = (h.camber != null ? h.camber : 0.05) ;
+    const D = [], DU = [], W = [], F = [];
+    const inCk = (z) => ck && z > ck.z0 && z < ck.z1;
+    const quad = (arr, a, b2, c, d) => arr.push(...a, ...b2, ...c, ...a, ...c, ...d);
     for (let i = 0; i < NS; i++) {
-      const t0 = i / NS, t1 = (i + 1) / NS, z0 = -L / 2 + t0 * L, z1 = -L / 2 + t1 * L;
-      const w0 = halfW(t0) * 0.985, w1 = halfW(t1) * 0.985, y0 = sheerH(t0) - 0.005, y1 = sheerH(t1) - 0.005;
-      D.push(-w0, y0, z0, w0, y0, z0, -w1, y1, z1, w0, y0, z0, w1, y1, z1, -w1, y1, z1);
+      const t0 = i / NS, t1 = (i + 1) / NS;
+      const l0 = skin(t0, 0, 1), l1 = skin(t1, 0, 1);
+      const w0 = l0[0] * 0.995, w1 = l1[0] * 0.995, y0 = l0[1] - 0.004, y1 = l1[1] - 0.004, z0 = l0[2], z1 = l1[2];
+      const zm = (z0 + z1) / 2;
+      if (inCk(zm)) {
+        const in0 = Math.max(0.02, w0 - ck.inset), in1 = Math.max(0.02, w1 - ck.inset);
+        for (const s of [1, -1]) {
+          quad(D, [s * w0, y0, z0], [s * in0, y0 + 0.004, z0], [s * in1, y1 + 0.004, z1], [s * w1, y1, z1]);
+          quad(W, [s * in0, y0, z0], [s * in0 * 0.97, ck.floor, z0], [s * in1 * 0.97, ck.floor, z1], [s * in1, y1, z1]);
+        }
+        quad(F, [-in0 * 0.97, ck.floor, z0], [in0 * 0.97, ck.floor, z0], [in1 * 0.97, ck.floor, z1], [-in1 * 0.97, ck.floor, z1]);
+      } else {
+        const c0 = y0 + camber * w0, c1 = y1 + camber * w1;
+        quad(D, [-w0, y0, z0], [0, c0, z0], [0, c1, z1], [-w1, y1, z1]);
+        quad(D, [0, c0, z0], [w0, y0, z0], [w1, y1, z1], [0, c1, z1]);
+      }
     }
+    if (ck) {
+      // Schotten vorn/hinten
+      for (const zc of [ck.z0, ck.z1]) {
+        const t = (zc + L / 2) / L, s0 = skin(t, 0, 1), wi = Math.max(0.02, s0[0] - ck.inset) * 0.97;
+        quad(W, [-wi, ck.floor, zc], [wi, ck.floor, zc], [wi, s0[1] + camber * wi * 0.5, zc], [-wi, s0[1] + camber * wi * 0.5, zc]);
+      }
+    }
+    for (let k = 0; k < D.length; k += 3) DU.push(D[k] * 1.6, D[k + 2] * 1.6);
     const dg = new THREE.BufferGeometry();
-    dg.setAttribute('position', new THREE.Float32BufferAttribute(D, 3)); dg.computeVertexNormals();
-    return { hull: g, deck: dg, halfW, sheerH };
+    dg.setAttribute('position', new THREE.Float32BufferAttribute(D, 3)); dg.setAttribute('uv', new THREE.Float32BufferAttribute(DU, 2)); dg.computeVertexNormals();
+    let wg = null, fg = null;
+    if (ck) {
+      wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(W, 3)); wg.computeVertexNormals();
+      const FU = []; for (let k = 0; k < F.length; k += 3) FU.push(F[k] * 1.6, F[k + 2] * 1.6);
+      fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(F, 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(FU, 2)); fg.computeVertexNormals();
+    }
+    // Scheuerleiste entlang der Deckskante
+    const rails = [1, -1].map((s) => {
+      const pts = []; for (let i = 0; i <= 24; i++) { const p = skin(i / 24, 0, s); pts.push(new THREE.Vector3(p[0] * 1.004, p[1] + 0.006, p[2])); }
+      return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, Math.max(0.012, 0.014 * sc), 6, false);
+    });
+    return { hull: g, deck: dg, walls: wg, floor: fg, rails, halfW, sheerH, skin };
   }
-  const hullMat = () => new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.08, side: THREE.DoubleSide });
+  // Rumpf-Lackierung: Grundfarbe, Wasserpass-/Zierstreifen, Segelnummer am Bug
+  function hullTexture(color, stripe, number, L, arcH, opts = {}) {
+    const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 512;
+    const g = cv.getContext('2d');
+    const hc = HEX(color), sc2 = HEX(stripe || 0xf4f4f0);
+    for (const half of [0, 1]) {
+      const y0 = half * 256;
+      const gr = g.createLinearGradient(0, y0, 0, y0 + 256);
+      gr.addColorStop(0, hc); gr.addColorStop(1, hc);
+      g.fillStyle = gr; g.fillRect(0, y0, 1024, 256);
+      // Zierstreifen unter der Deckskante
+      g.fillStyle = sc2; g.fillRect(0, y0 + 8, 1024, 9);
+      g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(0, y0, 1024, 4);
+      // feine Glanz-/Fertigungsnuancen
+      g.fillStyle = 'rgba(0,0,0,0.05)';
+      for (let i = 0; i < 6; i++) g.fillRect(0, y0 + 30 + i * 30, 1024, 1);
+      if (number) {
+        const pxX = L / 1024, pxY = arcH / 256, k = pxY / pxX;
+        const bowX = half === 0 ? 1024 * 0.8 : 1024 * 0.2;
+        g.save(); g.translate(bowX, y0 + 62); g.scale(k * 0.95, 1);
+        g.font = '800 46px Inter, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        const lum = ((color >> 16) & 255) * 0.3 + ((color >> 8) & 255) * 0.59 + (color & 255) * 0.11;
+        g.fillStyle = lum > 150 ? '#14213d' : '#f4f4f0';
+        g.fillText(number, 0, 0); g.restore();
+      }
+    }
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+    return t;
+  }
+  // Rutschfester Decksbelag (feine Körnung) – als Farb- und Bump-Textur
+  const nonSkid = (() => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    const g = cv.getContext('2d'); g.fillStyle = '#e9e6de'; g.fillRect(0, 0, 256, 256);
+    let s = 11; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 9000; i++) { const v = 200 + r() * 55; g.fillStyle = `rgb(${v},${v - 3},${v - 10})`; g.fillRect(r() * 256, r() * 256, 1.5, 1.5); }
+    g.strokeStyle = 'rgba(0,0,0,0.06)'; for (let i = 0; i < 256; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 256); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+    return t;
+  })();
+  const deckMat = (tint) => new THREE.MeshStandardMaterial({ map: nonSkid, bumpMap: nonSkid, bumpScale: 0.004, color: lin(tint || 0xffffff), roughness: 0.85, side: THREE.DoubleSide });
+  const hullMat = (map) => new THREE.MeshPhysicalMaterial({ map, vertexColors: true, roughness: 0.28, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.06, side: THREE.DoubleSide });
 
   // ---------- Segeltexturen ----------
   function sailTexture(kind, number, numColor, accent, chordAt, luff) {
@@ -1760,62 +1862,123 @@ void main(){
   }
 
   // ---------- Segler ----------
-  const SKIN = [0xd9a27c, 0xb98563, 0xf0c3a0, 0x8d5b3f];
+  const SKIN = [0xd9a27c, 0xb98563, 0xf0c3a0, 0x8d5b3f, 0xe6b591];
+  const HAIR = [0x2b1d14, 0x5a3a22, 0xc9a368, 0x111111, 0x8a4b2a];
+  // Rotationskörper aus (Radius, Höhe)-Profil
+  const lathe = (prof, seg = 14) => new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+  const DOWN = new THREE.Vector3(0, -1, 0);
+  const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q = new THREE.Quaternion();
   class Sailor {
     constructor(o) {
-      const sc = o.kid ? 0.82 : 1;
-      this.sc = sc;
-      const suit = std(o.suit || 0x1d232b, 0.85), vest = std(o.vest, 0.6), skin = std(o.skin, 0.7), helm = std(o.helmet || 0xf5f5f5, 0.35, 0.1);
-      const mk = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; return m; };
+      const sc = o.kid ? 0.8 : 1;
+      this.sc = sc; this.trap = !!o.trap;
+      const mk = (geo, mat, cast = true) => { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; return m; };
+      const suit = std(o.suit || 0x1d232b, 0.85), top = std(o.top || 0x24476b, 0.7), vest = std(o.vest, 0.6), skin = std(o.skin, 0.65);
+      const dark = std(0x1a1c20, 0.8), glove = std(0x2a2a2a, 0.75), hair = std(o.hair || 0x2b1d14, 0.9), helmC = std(o.helmet || 0xf5f5f5, 0.3, 0.1);
       this.root = new THREE.Group(); this.root.rotation.order = 'YXZ';
-      const body = new THREE.Group(); body.scale.setScalar(sc); this.root.add(body);
-      const hips = mk(new THREE.SphereGeometry(1, 12, 8), suit); hips.scale.set(0.17, 0.12, 0.12); body.add(hips);
+      const body = new THREE.Group(); body.scale.setScalar(sc); this.root.add(body); this.body = body;
+      // Becken / Shorts
+      const pelvis = mk(lathe([[0, -0.1], [0.12, -0.08], [0.155, -0.02], [0.15, 0.06], [0.13, 0.1], [0, 0.11]]), suit); pelvis.scale.z = 0.78; body.add(pelvis);
       this.spine = new THREE.Group(); body.add(this.spine);
-      const torso = mk(capsuleGeo(0.19, 0.15, 0.42), suit); torso.rotation.x = Math.PI; torso.position.y = 0.06; this.spine.add(torso);
-      const vst = mk(capsuleGeo(0.215, 0.18, 0.3), vest); vst.rotation.x = Math.PI; vst.position.y = 0.2; vst.scale.set(1, 1, 0.9); this.spine.add(vst);
-      this.neck = new THREE.Group(); this.neck.position.y = 0.62; this.spine.add(this.neck);
-      const head = mk(new THREE.SphereGeometry(0.105, 16, 12), skin); head.position.y = 0.1; head.scale.set(1, 1.12, 1.05); this.neck.add(head);
-      if (o.cap) {
-        const cap = mk(new THREE.SphereGeometry(0.112, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), helm); cap.position.y = 0.13; this.neck.add(cap);
-        const brim = mk(new THREE.CylinderGeometry(0.09, 0.09, 0.012, 16, 1, false, -Math.PI / 2, Math.PI), helm); brim.position.set(0, 0.13, 0.07); this.neck.add(brim);
-      } else {
-        const hl = mk(new THREE.SphereGeometry(0.125, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), helm); hl.position.y = 0.12; this.neck.add(hl);
+      // Oberkörper: Taille -> Brust -> Schultern
+      const torso = mk(lathe([[0, 0.02], [0.13, 0.04], [0.14, 0.14], [0.165, 0.28], [0.185, 0.4], [0.19, 0.48], [0.16, 0.55], [0.07, 0.6], [0, 0.61]]), top);
+      torso.scale.z = 0.68; this.spine.add(torso);
+      // Schwimmweste
+      const v = mk(lathe([[0.152, 0.17], [0.19, 0.2], [0.21, 0.3], [0.215, 0.42], [0.2, 0.5], [0.15, 0.545]]), vest);
+      v.scale.z = 0.8; this.spine.add(v);
+      const zip = mk(new THREE.BoxGeometry(0.012, 0.32, 0.01), dark, false); zip.position.set(0, 0.36, 0.172); this.spine.add(zip);
+      for (const sx of [1, -1]) { const st = mk(new THREE.BoxGeometry(0.06, 0.02, 0.25), vest, false); st.position.set(sx * 0.1, 0.56, 0); this.spine.add(st); }
+      // Trapezgurt mit Haken
+      if (this.trap) {
+        const belt = mk(new THREE.TorusGeometry(0.15, 0.03, 6, 18), dark); belt.rotation.x = Math.PI / 2; belt.scale.y = 0.75; belt.position.y = 0.02; body.add(belt);
+        const hook = mk(new THREE.TorusGeometry(0.035, 0.009, 6, 12, Math.PI * 1.4), std(0xc9ccd0, 0.3, 0.8)); hook.position.set(0, 0.05, 0.13); body.add(hook);
       }
-      const sun = mk(new THREE.BoxGeometry(0.17, 0.035, 0.02), std(0x111111, 0.2, 0.6)); sun.position.set(0, 0.12, 0.1); this.neck.add(sun);
+      // Hals & Kopf
+      const neck = mk(new THREE.CylinderGeometry(0.048, 0.055, 0.1, 10), skin); neck.position.y = 0.63; this.spine.add(neck);
+      this.neck = new THREE.Group(); this.neck.position.y = 0.66; this.spine.add(this.neck);
+      const head = mk(new THREE.SphereGeometry(0.1, 18, 14), skin); head.position.y = 0.1; head.scale.set(0.92, 1.12, 1.02); this.neck.add(head);
+      const jaw = mk(new THREE.SphereGeometry(0.075, 12, 8), skin); jaw.position.set(0, 0.045, 0.03); jaw.scale.set(1, 0.8, 1.05); this.neck.add(jaw);
+      const nose = mk(new THREE.ConeGeometry(0.016, 0.04, 6), skin, false); nose.rotation.x = Math.PI / 2; nose.position.set(0, 0.095, 0.103); this.neck.add(nose);
+      for (const sx of [1, -1]) {
+        const ear = mk(new THREE.SphereGeometry(0.022, 8, 6), skin, false); ear.scale.set(0.5, 1, 0.8); ear.position.set(sx * 0.093, 0.1, 0); this.neck.add(ear);
+      }
+      const glasses = mk(new THREE.BoxGeometry(0.17, 0.036, 0.03), std(0x0b0d10, 0.15, 0.7), false); glasses.position.set(0, 0.122, 0.092); this.neck.add(glasses);
+      const hairM = mk(new THREE.SphereGeometry(0.104, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), hair); hairM.position.set(0, 0.105, -0.008); hairM.scale.set(0.95, 1.12, 1.05); this.neck.add(hairM);
+      if (o.cap) {
+        const cap = mk(new THREE.SphereGeometry(0.108, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), helmC); cap.position.y = 0.13; this.neck.add(cap);
+        const brim = mk(new THREE.CylinderGeometry(0.085, 0.085, 0.01, 16, 1, false, -Math.PI / 2, Math.PI), helmC); brim.position.set(0, 0.135, 0.075); this.neck.add(brim);
+      } else {
+        const hl = mk(new THREE.SphereGeometry(0.122, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.56), helmC); hl.position.y = 0.115; this.neck.add(hl);
+        const rim = mk(new THREE.TorusGeometry(0.112, 0.008, 6, 20), dark, false); rim.rotation.x = Math.PI / 2; rim.position.y = 0.09; this.neck.add(rim);
+      }
+      // Arme (Oberarm 0.28, Unterarm 0.26)
+      this.UA = 0.28; this.FA = 0.27;
       const arm = (sx) => {
-        const sh = new THREE.Group(); sh.position.set(sx * 0.215, 0.5, 0); this.spine.add(sh);
-        sh.add(mk(capsuleGeo(0.06, 0.05, 0.28), suit));
-        const el = new THREE.Group(); el.position.y = -0.29; sh.add(el);
-        el.add(mk(capsuleGeo(0.05, 0.042, 0.25), suit));
-        const hand = mk(new THREE.SphereGeometry(0.045, 8, 6), std(0x2b2b2b, 0.8)); hand.position.y = -0.28; el.add(hand);
-        return { sh, el };
+        const sh = new THREE.Group(); sh.position.set(sx * 0.2, 0.5, 0); this.spine.add(sh);
+        const delt = mk(new THREE.SphereGeometry(0.068, 10, 8), top); delt.scale.set(1, 0.9, 0.9); sh.add(delt);
+        sh.add(mk(lathe([[0.058, 0], [0.055, -0.12], [0.046, -0.28]], 10), top));
+        const el = new THREE.Group(); el.position.y = -this.UA; sh.add(el);
+        el.add(mk(new THREE.SphereGeometry(0.047, 8, 6), top));
+        el.add(mk(lathe([[0.046, 0], [0.044, -0.1], [0.036, -0.25]], 10), top));
+        const hand = new THREE.Group(); hand.position.y = -this.FA; el.add(hand);
+        const palm = mk(new THREE.BoxGeometry(0.075, 0.09, 0.035), glove); palm.position.y = -0.03; hand.add(palm);
+        const thumb = mk(new THREE.BoxGeometry(0.02, 0.05, 0.02), glove); thumb.position.set(sx * -0.03, -0.01, 0.025); thumb.rotation.z = sx * 0.5; hand.add(thumb);
+        return { sh, el, sx };
       };
       this.aL = arm(1); this.aR = arm(-1);
+      // Beine (Oberschenkel 0.44, Unterschenkel 0.44)
       const leg = (sx) => {
-        const th = new THREE.Group(); th.position.set(sx * 0.1, -0.02, 0); body.add(th);
-        th.add(mk(capsuleGeo(0.085, 0.065, 0.42), suit));
+        const th = new THREE.Group(); th.position.set(sx * 0.095, -0.03, 0); body.add(th);
+        th.add(mk(lathe([[0.085, 0], [0.088, -0.12], [0.07, -0.3], [0.06, -0.44]], 10), suit));
+        const pad = mk(new THREE.BoxGeometry(0.1, 0.24, 0.03), dark); pad.position.set(0, -0.24, -0.06); th.add(pad);
         const kn = new THREE.Group(); kn.position.y = -0.44; th.add(kn);
-        kn.add(mk(capsuleGeo(0.065, 0.05, 0.42), suit));
-        const ft = mk(new THREE.BoxGeometry(0.1, 0.07, 0.25), std(0x22262c, 0.7)); ft.position.set(0, -0.46, 0.07); kn.add(ft);
+        kn.add(mk(new THREE.SphereGeometry(0.06, 8, 6), suit));
+        kn.add(mk(lathe([[0.058, 0], [0.06, -0.12], [0.045, -0.4]], 10), suit));
+        const boot = mk(new THREE.BoxGeometry(0.1, 0.1, 0.27), std(0x2b2f35, 0.7)); boot.position.set(0, -0.45, 0.06); kn.add(boot);
+        const sole = mk(new THREE.BoxGeometry(0.105, 0.025, 0.28), std(0xdedede, 0.8), false); sole.position.set(0, -0.505, 0.06); kn.add(sole);
         return { th, kn };
       };
       this.lL = leg(1); this.lR = leg(-1);
-      this.cur = null;
+      this.cur = null; this.breath = Math.random() * 6;
     }
-    // Ziel-Pose übernehmen (weich)
-    pose(p, k) {
+    pose(p, k, dt) {
       if (!this.cur) this.cur = { ...p };
       const c = this.cur;
       for (const key in p) c[key] += (p[key] - c[key]) * k;
+      this.breath += dt || 0.016;
       this.root.rotation.x = c.rx; this.root.rotation.y = c.ry; this.root.rotation.z = c.rz || 0;
       this.root.position.set(c.x, c.y, c.z);
-      this.spine.rotation.x = c.sp; this.neck.rotation.x = c.nk;
-      this.lL.th.rotation.x = c.th; this.lR.th.rotation.x = c.th; this.lL.th.rotation.z = c.ts; this.lR.th.rotation.z = -c.ts;
-      this.lL.kn.rotation.x = c.kn; this.lR.kn.rotation.x = c.kn;
-      this.aL.sh.rotation.x = c.al; this.aL.el.rotation.x = c.el; this.aL.sh.rotation.z = c.az;
-      this.aR.sh.rotation.x = c.ar; this.aR.el.rotation.x = c.er; this.aR.sh.rotation.z = -c.az;
+      this.spine.rotation.set(c.sp + Math.sin(this.breath * 1.7) * 0.012, 0, 0);
+      this.neck.rotation.set(c.nk, c.ny || 0, 0);
+      this.lL.th.rotation.set(c.th, 0, c.ts); this.lR.th.rotation.set(c.th, 0, -c.ts);
+      this.lL.kn.rotation.set(c.kn, 0, 0); this.lR.kn.rotation.set(c.kn, 0, 0);
+      this.aL.sh.rotation.set(c.al, 0, c.az); this.aL.el.rotation.set(c.el, 0, 0);
+      this.aR.sh.rotation.set(c.ar, 0, -c.az); this.aR.el.rotation.set(c.er, 0, 0);
+    }
+    // Arm per 2-Gelenk-IK zu einem Ziel (in Koordinaten des Elternobjekts von root, also Boot)
+    reach(armObj, target, parent, pole) {
+      _v1.copy(target).applyMatrix4(parent.matrixWorld);
+      this.spine.worldToLocal(_v1);
+      const S = armObj.sh.position, a = this.UA, b2 = this.FA;
+      _v2.copy(_v1).sub(S);
+      let d = Math.hypot(_v2.x, _v2.y, _v2.z);
+      if (d < 1e-4) return;
+      d = clamp(d, 0.12, (a + b2) * 0.995);
+      const dir = _v2.normalize();
+      const cosA = clamp((a * a + d * d - b2 * b2) / (2 * a * d), -1, 1), A = Math.acos(cosA);
+      _v3.set(armObj.sx * (pole ? pole.x : 0.5), pole ? pole.y : -0.7, pole ? pole.z : -0.5);
+      const axis = new THREE.Vector3().crossVectors(dir, _v3);
+      if (Math.hypot(axis.x, axis.y, axis.z) < 1e-3) axis.set(1, 0, 0); axis.normalize();
+      const upper = dir.clone().applyAxisAngle(axis, A);
+      armObj.sh.quaternion.setFromUnitVectors(DOWN, upper);
+      const elbow = upper.clone().multiplyScalar(a).add(S);
+      const fore = _v1.clone().sub(elbow).normalize();
+      _q.copy(armObj.sh.quaternion).invert();
+      fore.applyQuaternion(_q);
+      armObj.el.quaternion.setFromUnitVectors(DOWN, fore);
     }
   }
+
   // Posen (Segler schaut entlang +z, außenbords = -z)
   const POSE = {
     sit:   { sp: -0.12, nk: 0.1, th: -1.45, ts: 0.15, kn: 1.5, al: -0.9, el: -0.7, ar: -0.6, er: -0.9, az: 0.1 },
@@ -1834,12 +1997,19 @@ void main(){
       this.root = new THREE.Group(); this.tilt = new THREE.Group(); this.root.add(this.tilt);
       const deckY = S.deck;
       // Rümpfe
-      const hull = makeHull(H, b.color, { stripe: b.stripe });
+      const hull = makeHull(H, b.color, { cockpit: S.cockpit });
       this.halfW = hull.halfW;
-      const hm = hullMat(), dmat = new THREE.MeshStandardMaterial({ color: lin(S.app === 'imoca' ? 0x8b9096 : 0xe8e5dc), roughness: 0.75, side: THREE.DoubleSide });
+      const arcH = (H.sheer + H.depth) * 1.25;
+      const hm = hullMat(hullTexture(b.color, b.stripe, S.app === 'f50' || S.app === 'imoca' ? b.name.toUpperCase().slice(0, 10) : b.sailNo, L, arcH));
+      const dmat = deckMat(S.app === 'imoca' ? 0x9aa0a6 : S.app === 'f50' ? 0x6a7078 : 0xffffff);
+      const railMat = std(S.app === 'opti' ? 0x9c6b3c : 0x2b2f35, 0.5, 0.1);
+      const innerMat = new THREE.MeshStandardMaterial({ color: lin(0xdcd9d0), roughness: 0.7, side: THREE.DoubleSide });
       const addHull = (x) => {
         const m = new THREE.Mesh(hull.hull, hm); m.position.x = x; m.castShadow = true; m.receiveShadow = true; this.tilt.add(m);
         const d = new THREE.Mesh(hull.deck, dmat); d.position.x = x; d.receiveShadow = true; d.castShadow = true; this.tilt.add(d);
+        for (const rg of hull.rails) { const r = new THREE.Mesh(rg, railMat); r.position.x = x; r.castShadow = true; this.tilt.add(r); }
+        if (hull.walls) { const w = new THREE.Mesh(hull.walls, innerMat); w.position.x = x; w.receiveShadow = true; this.tilt.add(w); }
+        if (hull.floor) { const f = new THREE.Mesh(hull.floor, deckMat(0xd9d6cc)); f.position.x = x; f.receiveShadow = true; this.tilt.add(f); }
       };
       if (S.cat) { addHull(-S.hullX); addHull(S.hullX); } else addHull(0);
       const blk = 0x1c1f24, wood = 0x9c6b3c, metal = 0xc9ccd0;
@@ -1849,7 +2019,7 @@ void main(){
       if (S.app === 'opti') {
         const db = box(0.02, 0.9, 0.3, wood, 0.5); db.position.set(0, -0.2, -0.15); this.tilt.add(db);
         this.rudderM = box(0.02, 0.75, 0.25, wood, 0.5); this.rudderM.position.set(0, -0.05, L / 2 + 0.1); this.tilt.add(this.rudderM);
-        const ins = box(0.9, 0.04, 0.6, 0xdadada, 0.8); ins.position.set(0, deckY - 0.15, 0.25); this.tilt.add(ins);
+        const trunk = box(0.07, 0.22, 0.36, 0xf2f2ee, 0.5); trunk.position.set(0, 0.17, -0.15); this.tilt.add(trunk);
         const thw = box(1.0, 0.05, 0.12, wood, 0.6); thw.position.set(0, deckY - 0.02, -0.1); this.tilt.add(thw);
       } else if (S.app === 'dinghy' || S.app === 'skiff') {
         const cb = box(0.025, 1.0, 0.36, blk, 0.4); cb.position.set(0, -0.45, -0.15); this.tilt.add(cb);
@@ -1992,9 +2162,13 @@ void main(){
       const main = new THREE.Mesh(this.mainGeo, sailMat(mainTex, M.tex)); main.castShadow = true; main.receiveShadow = true; main.frustumCulled = false;
       this.boomPivot.add(main);
       if (M.peakRise) { this.sprit = wire([[0, 0, 0], [0, 1, 0]], 0x6b4a2b, 1); this.boomPivot.add(this.sprit); }
+      // Großschot & Baumniederholer (laufendes Gut)
+      this.vangLine = wire([[0, 0, 0], [0, 1, 0]], 0x2b2b2b, 0.95); this.tilt.add(this.vangLine);
+      this.mainSheet = wire([[0, 0, 0], [0, 1, 0], [0, 2, 0]], 0x1d3557, 0.95); this.tilt.add(this.mainSheet);
       }
       // Fock
       if (S.jib) {
+        this.jibSheet = wire([[0, 0, 0], [0, 1, 0]], 0xd7263d, 0.95); this.tilt.add(this.jibSheet);
         this.jibGeo = sailGrid(8, 12);
         const jt = M ? M.tex : 'film'; const jm = new THREE.Mesh(this.jibGeo, sailMat(plainSail(jt), jt)); jm.castShadow = true; jm.frustumCulled = false; this.tilt.add(jm);
       }
@@ -2004,12 +2178,15 @@ void main(){
         const cols = [HEX(b.color), b.kite2 || '#ffffff'];
         this.kiteMesh = new THREE.Mesh(this.kiteGeo, new THREE.MeshStandardMaterial({ map: kiteTexture(cols[0], cols[1]), side: THREE.DoubleSide, roughness: 0.6, emissive: lin(0x222222), emissiveIntensity: 0.2 }));
         this.kiteMesh.castShadow = true; this.kiteMesh.frustumCulled = false; this.kiteMesh.visible = false; this.tilt.add(this.kiteMesh);
+        this.kiteSheet = wire([[0, 0, 0], [0, 1, 0]], 0xf4b400, 0.95); this.kiteSheet.visible = false; this.tilt.add(this.kiteSheet);
         if (S.kite.type === 'sym') { this.pole = between([0, 0, 0], [0, 1, 0], 0.02, metal, 0.3, 0.8); this.pole.visible = false; this.tilt.add(this.pole); }
       }
       // Crew
       const vests = [b.crew || 0xd7263d, b.crew2 || 0xf4b400];
       this.sailors = S.crew.map((slot, i) => {
-        const s = new Sailor({ vest: vests[i % 2], skin: SKIN[(b.idx * 2 + i) % SKIN.length], helmet: S.app === 'opti' || S.app === 'dinghy' || S.app === 'imoca' ? (i ? 0xf4f4f4 : 0x1d3557) : b.color, cap: S.app === 'opti' || S.app === 'dinghy' || S.app === 'imoca', kid: S.kid });
+        const capped = S.app === 'opti' || S.app === 'dinghy' || S.app === 'imoca';
+        const s = new Sailor({ vest: vests[i % 2], top: b.color, skin: SKIN[(b.idx * 2 + i) % SKIN.length], hair: HAIR[(b.idx + i * 3) % HAIR.length],
+          helmet: capped ? (i ? 0xf4f4f4 : 0x1d3557) : b.color, cap: capped, kid: S.kid, trap: !!slot.trap });
         this.tilt.add(s.root);
         const wire1 = slot.trap ? wire([[0, 0, 0], [0, 1, 0]], 0x1a1a1a, 0.9) : null;
         if (wire1) this.tilt.add(wire1);
@@ -2089,6 +2266,14 @@ void main(){
         const o = (nv * (nu + 1) + nu) * 3, p = this.sprit.geometry.attributes.position;
         p.setXYZ(0, 0, y0 + 0.2, 0); p.setXYZ(1, pos[o], pos[o + 1], pos[o + 2]); p.needsUpdate = true;
       }
+      // Laufendes Gut im Bootskoordinatensystem
+      const S = this.S, bp = this.boomPivot.position, ba = b.boom, sb = Math.sin(ba), cb = Math.cos(ba);
+      const at = (f) => [bp.x + sb * M.foot * f, bp.y, bp.z + cb * M.foot * f];
+      const vg = this.vangLine.geometry.attributes.position, v1 = at(0.22);
+      vg.setXYZ(0, v1[0], v1[1], v1[2]); vg.setXYZ(1, 0, S.deck + 0.06, S.mastZ + 0.06 * this.sc); vg.needsUpdate = true;
+      const ms = this.mainSheet.geometry.attributes.position, m1 = at(0.9), m2 = at(0.62);
+      const trav = [sb * M.foot * 0.25, S.deck + 0.05, bp.z + M.foot * 0.9];
+      ms.setXYZ(0, m2[0], m2[1], m2[2]); ms.setXYZ(1, trav[0], trav[1], trav[2]); ms.setXYZ(2, m1[0], m1[1], m1[2]); ms.needsUpdate = true;
     }
 
     updateJib(time) {
@@ -2117,11 +2302,15 @@ void main(){
         }
       }
       this.jibGeo.attributes.position.needsUpdate = true; this.jibGeo.computeVertexNormals();
+      if (this.jibSheet) {
+        const fz = S.mastZ + 0.45 * sc, fx = js * (S.cat ? 0.9 * sc : this.halfW(clamp((fz + L / 2) / L, 0, 1)) * 0.7);
+        const g = this.jibSheet.geometry.attributes.position; g.setXYZ(0, C[0], C[1], C[2]); g.setXYZ(1, fx, S.deck + 0.05, fz); g.needsUpdate = true;
+      }
     }
 
     updateKite(time) {
       const b = this.b, S = this.S, L = this.L, sc = this.sc, f = b.kiteF || 0;
-      this.kiteMesh.visible = f > 0.03;
+      this.kiteMesh.visible = f > 0.03; this.kiteSheet.visible = f > 0.03;
       if (this.pole) this.pole.visible = f > 0.03;
       if (!this.kiteMesh.visible) return;
       const side = b.boom >= 0 ? 1 : -1, wS = -side, mh = S.mastH, d = S.deck;
@@ -2159,10 +2348,15 @@ void main(){
         }
       }
       this.kiteGeo.attributes.position.needsUpdate = true; this.kiteGeo.computeVertexNormals();
+      {
+        const g = this.kiteSheet.geometry.attributes.position, rz = L / 2 - 0.25 * sc;
+        const rx = side * (S.cat ? S.hullX : this.halfW(clamp((rz + L / 2) / L, 0, 1)));
+        g.setXYZ(0, C[0], C[1], C[2]); g.setXYZ(1, rx, d + 0.05, rz); g.needsUpdate = true;
+      }
     }
 
     updateCrew(dt) {
-      const b = this.b, S = this.S, sc = this.sc;
+      const b = this.b, S = this.S;
       const wTarget = (b.twa || 0) >= 0 ? 1 : -1;
       const awa = b.awa || 40;
       const power = clamp(((b.heelT || 0) - 4) / 16, 0, 1);
@@ -2171,49 +2365,77 @@ void main(){
       for (const c of this.sailors) {
         const { s, slot } = c;
         c.side += clamp(wTarget - c.side, -dt * 1.9, dt * 1.9);
-        const sd = c.side >= 0 ? 1 : -1, z = slot.z * (S.app === 'imoca' ? 1 : 1);
+        const sd = c.side >= 0 ? 1 : -1, z = slot.z;
         const rail = this.rail(z);
         const deckY = S.deck + (S.wing ? (S.app === 'moth' ? 0.08 : 0.05) : 0);
         let p;
+        c.mode = 'none'; c.sd = sd;
         const crossing = slot.role !== 'pod' && Math.abs(c.side) < 0.85;
         if (slot.role === 'pod') {
           const ps = slot.lee ? -c.side : c.side, psd = ps >= 0 ? 1 : -1;
-          if (Math.abs(ps) < 0.85) p = { ...POSE.crouch, x: ps * S.hullX, y: deckY + 0.1, z, rx: 0, ry: -psd * Math.PI / 2, rz: 0 };
-          else p = { ...POSE.stand, sp: 0.6, kn: 0.6, th: -0.45, x: psd * S.hullX, y: deckY - 0.35, z, rx: 0, ry: Math.PI + psd * 0.25, rz: 0 };
+          if (Math.abs(ps) < 0.85) p = { ...POSE.crouch, x: ps * S.hullX, y: deckY + 0.1, z, rx: 0, ry: -psd * Math.PI / 2, rz: 0, ny: 0 };
+          else { p = { ...POSE.stand, sp: 0.6, kn: 0.6, th: -0.45, x: psd * S.hullX, y: deckY - 0.35, z, rx: 0, ry: Math.PI + psd * 0.25, rz: 0, ny: 0 }; c.mode = 'grind'; }
         } else if (slot.role === 'stand') {
-          p = { ...POSE.stand, x: sd * 1.2, y: deckY - 0.45 + 0.88, z, rx: 0, ry: Math.PI + sd * 0.35, rz: 0 };
+          p = { ...POSE.stand, x: sd * 1.2, y: deckY - 0.45 + 0.88, z, rx: 0, ry: Math.PI + sd * 0.35, rz: 0, ny: 0 }; c.mode = 'grind';
         } else if (crossing) {
-          p = { ...POSE.crouch, x: c.side * rail * 0.7, y: deckY + 0.35, z, rx: 0, ry: -sd * (Math.PI / 2 + 0.3), rz: 0 };
+          p = { ...POSE.crouch, x: c.side * rail * 0.7, y: deckY + 0.35, z, rx: 0, ry: -sd * (Math.PI / 2 + 0.3), rz: 0, ny: 0 };
         } else {
           const trapOn = slot.trap && !downwind && (S.app === '49er' || S.app === 'skiff' || S.app === 'nacra' ? b.v > 3 && power > 0.15 : power > 0.45);
           const ry = -sd * (Math.PI / 2 + (slot.role === 'helm' ? 0.35 : 0.2));
+          const ny = -sd * (slot.role === 'helm' ? 0.45 : 0.6);
           if (trapOn) {
             const al = 1.15 + 0.3 * power, Ll = 0.9 * s.sc;
-            p = { ...POSE.trap, x: sd * (rail + Math.sin(al) * Ll), y: deckY + Math.cos(al) * Ll, z, rx: -al, ry, rz: 0 };
+            p = { ...POSE.trap, x: sd * (rail + Math.sin(al) * Ll), y: deckY + Math.cos(al) * Ll, z, rx: -al, ry, rz: 0, ny };
+            c.mode = 'trap';
           } else if (downwind || power < 0.08) {
             const inX = S.app === 'moth' ? rail * 0.55 : S.cat ? S.hullX * 0.5 : rail * 0.8;
-            p = { ...POSE.sit, x: sd * inX, y: deckY + 0.1, z, rx: 0, ry, rz: 0 };
+            p = { ...POSE.sit, x: sd * inX, y: deckY + 0.1, z, rx: 0, ry, rz: 0, ny }; c.mode = 'sit';
           } else {
             const h = S.app === 'moth' ? 0.5 + 0.5 * power : power;
-            p = { ...POSE.hike(h), x: sd * (rail - 0.02), y: deckY + 0.1, z, rx: 0, ry, rz: 0 };
+            p = { ...POSE.hike(h), x: sd * (rail - 0.02), y: deckY + 0.1, z, rx: 0, ry, rz: 0, ny }; c.mode = 'hike';
           }
         }
-        // ry kontinuierlich halten
         if (s.cur) { while (p.ry - s.cur.ry > Math.PI) p.ry -= 2 * Math.PI; while (p.ry - s.cur.ry < -Math.PI) p.ry += 2 * Math.PI; }
-        s.pose(p, k);
+        s.pose(p, k, dt);
+      }
+      // Hände an Pinnenausleger, Schot, Trapezgriff oder Winsch (Inverse Kinematik)
+      this.root.updateMatrixWorld(true);
+      const T = new THREE.Vector3();
+      this.handE = null;
+      for (const c of this.sailors) {
+        const { s, slot } = c;
+        if (c.mode === 'none') { if (c.wire) c.wire.visible = false; continue; }
+        const r = s.root.position, sd = c.sd;
+        const aft = sd > 0 ? s.aL : s.aR, fwd = sd > 0 ? s.aR : s.aL;
+        if (c.mode === 'grind') {
+          s.reach(s.aL, T.set(r.x + 0.16, r.y + 0.32, r.z - 0.45), this.tilt);
+          s.reach(s.aR, T.set(r.x - 0.16, r.y + 0.32, r.z - 0.45), this.tilt);
+        } else if (slot.role === 'helm') {
+          const E = new THREE.Vector3(r.x - sd * (c.mode === 'trap' ? 0.1 : 0.2), r.y + (c.mode === 'trap' ? 0.3 : 0.24), r.z + 0.14);
+          s.reach(aft, E, this.tilt);
+          this.handE = E;
+          s.reach(fwd, T.set(r.x - sd * 0.3, r.y + 0.22, r.z - 0.28), this.tilt);
+        } else if (c.mode === 'trap') {
+          T.set(this.hounds[0] - r.x, this.hounds[1] - r.y, this.hounds[2] - r.z).normalize().multiplyScalar(0.62).add(r);
+          s.reach(aft, T, this.tilt, { x: 0.7, y: 0, z: -0.6 });
+          s.reach(fwd, T.set(r.x - sd * 0.32, r.y + 0.12, r.z - 0.2), this.tilt);
+        } else {
+          s.reach(aft, T.set(r.x - sd * 0.32, r.y + 0.2, r.z - 0.02), this.tilt);
+          s.reach(fwd, T.set(r.x - sd * 0.3, r.y + 0.22, r.z - 0.22), this.tilt);
+        }
         if (c.wire) {
-          const on = !crossing && Math.abs(s.root.rotation.x) > 0.7;
+          const on = c.mode === 'trap';
           c.wire.visible = on;
-          if (on) { const g = c.wire.geometry.attributes.position; g.setXYZ(0, ...this.hounds); g.setXYZ(1, s.root.position.x, s.root.position.y + 0.05, s.root.position.z); g.needsUpdate = true; }
+          if (on) { const g = c.wire.geometry.attributes.position; g.setXYZ(0, ...this.hounds); g.setXYZ(1, r.x, r.y + 0.06, r.z); g.needsUpdate = true; }
         }
       }
-      // Pinnenausleger zur Hand des Steuermanns
-      if (this.extLine && this.sailors[0]) {
-        const h = this.sailors[0].s.root.position, t = this.tiller;
-        const a = this.tillerLen;
-        const ex = t.position.x + Math.sin(-t.rotation.y) * -a * 0, ey = t.position.y + 0.05, ez = t.position.z - a * Math.cos(t.rotation.y);
-        const g = this.extLine.geometry.attributes.position;
-        g.setXYZ(0, t.position.x - Math.sin(t.rotation.y) * a, ey, ez); g.setXYZ(1, h.x * 0.92, h.y + 0.25, h.z - 0.25); g.needsUpdate = true;
+      // Pinnenausleger von der Pinne zur Hand des Steuermanns
+      if (this.extLine) {
+        const t = this.tiller, a = this.tillerLen, g = this.extLine.geometry.attributes.position;
+        const tx = t.position.x - Math.sin(t.rotation.y) * a, ty = t.position.y + 0.05, tz = t.position.z - a * Math.cos(t.rotation.y);
+        const E = this.handE;
+        this.extLine.visible = !!E;
+        if (E) { g.setXYZ(0, tx, ty, tz); g.setXYZ(1, E.x + (E.x - tx) * 0.08, E.y + (E.y - ty) * 0.08, E.z + (E.z - tz) * 0.08); g.needsUpdate = true; }
       }
     }
 
@@ -2310,8 +2532,8 @@ void main(){
   function makeCommittee(flagCols) {
     const cbg = new THREE.Group();
     const h = makeHull({ L: 9, B: 3.0, sheer: 0.9, rise: 0.22, depth: 0.5 }, 0xf2f2ee, { stripe: 0x1d3557 });
-    const hm = new THREE.Mesh(h.hull, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.25, side: THREE.DoubleSide }));
-    const dm = new THREE.Mesh(h.deck, new THREE.MeshStandardMaterial({ color: lin(0xdedad0), roughness: 0.7, side: THREE.DoubleSide })); hm.castShadow = true;
+    const hm = new THREE.Mesh(h.hull, hullMat(hullTexture(0xf2f2ee, 0x1d3557, 'RACE COMMITTEE', 9, 1.75)));
+    const dm = new THREE.Mesh(h.deck, deckMat()); hm.castShadow = true;
     const cab = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.4, 3.2), std(0xf7f7f2, 0.4)); cab.position.set(0, 1.6, 0.2); cab.castShadow = true;
     const win = new THREE.Mesh(new THREE.BoxGeometry(2.22, 0.45, 2.6), std(0x10202e, 0.1, 0.4)); win.position.set(0, 1.95, 0.2);
     const roof = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 3.5), std(0x1d3557, 0.5)); roof.position.set(0, 2.36, 0.2);
@@ -2478,7 +2700,7 @@ void main(){
     const back = cfg ? 85 * s + (p.idx % 3) * world.cls.L * 2 : 85 * s;
     p.x = st0.cx + st0.ux * slotOff - st0.n.x * back; p.z = st0.cz + st0.uz * slotOff - st0.n.z * back; p.h = 90 * DEG; p.v = world.cls.polar[8] * 0.5; p.px = p.x; p.pz = p.z;
     setCamDims(cls); cam.snap = true;
-    input.sheet = 0.45; p.sheet = p.sheetT = 0.45; p.kiteCmd = false;
+    input.sheet = world.autoTrim ? 0 : 0.45; input.easeHold = false; p.sheet = p.sheetT = 0.45; p.kiteCmd = false;
     cam.yaw = p.h; cam.orbit = 0; acc = 0;
     state = 'race'; paused = false;
     $('menu').classList.add('hidden'); $('results').classList.add('hidden'); $('pausedlg').classList.add('hidden');
@@ -2497,11 +2719,12 @@ void main(){
     if (e.code === 'Space' || e.code === 'KeyT') { e.preventDefault(); doTack(); }
     if (e.code === 'KeyC') cycleCam();
     if (e.code === 'KeyG') toggleKite();
+    if (e.code === 'KeyF') input.easeHold = true;
     if (e.code === 'KeyH') toggleHelp();
     if (e.code === 'KeyM') toggleSound();
     if (e.code === 'KeyP' || e.code === 'Escape') togglePause();
   });
-  addEventListener('keyup', (e) => { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (!e.shiftKey) input.fine = false; });
+  addEventListener('keyup', (e) => { if (e.code === 'KeyF') input.easeHold = false; if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (!e.shiftKey) input.fine = false; });
   addEventListener('blur', () => { for (const k in keys) keys[k] = false; touchKeys.left = touchKeys.right = false; });
   const touchKeys = { left: false, right: false };
   function holdBtn(el, key) {
@@ -2521,6 +2744,13 @@ void main(){
   }
   const kiteName = () => (world.cls.kite === 'sym' ? 'Spinnaker' : 'Gennaker');
   $('bkite').addEventListener('pointerdown', (e) => { e.preventDefault(); toggleKite(); });
+  { // Fieren (halten): Schot ganz auf – z. B. um vor der Startlinie abzubremsen
+    const be = $('bease');
+    const on = (e) => { e.preventDefault(); input.easeHold = true; };
+    const off = () => { input.easeHold = false; };
+    be.addEventListener('pointerdown', on); be.addEventListener('pointerup', off); be.addEventListener('pointercancel', off); be.addEventListener('pointerleave', off);
+    be.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
   function doTack() {
     if (!world || paused) return;
     const p = world.player; world.tackOrGybe(p);
@@ -2706,14 +2936,15 @@ void main(){
     else if (p.luff > 0.12) { tt = 'Segel killt – dichtholen ↑'; tcls = 'bad'; }
     else if (p.over > 0.3) { tt = 'Zu dicht – fieren ↓'; tcls = 'warn'; }
     else { tt = 'Trimm optimal'; tcls = 'good'; }
-    if (world.autoTrim) { tt = 'Auto-Trimm'; tcls = 'good'; }
+    if (world.autoTrim) { const eased = p.sheetT > (p.autoSheet || 0) + 0.03; tt = eased ? 'Auto-Trimm – gefiert' : 'Auto-Trimm'; tcls = eased ? 'warn' : 'good'; }
     const te = $('trimtxt'); te.textContent = tt; te.className = tcls;
     const ideal = clamp((p.idealBoom - 3) / 82, 0, 1);
     $('idealzone').style.left = clamp(ideal * 100 - 4, 0, 100) + '%';
     $('idealzone').style.width = '8%';
     $('sheetmark').style.left = p.sheet * 100 + '%';
-    knob.style.top = (world.autoTrim ? p.sheet : input.sheet) * 100 + '%';
+    knob.style.top = (input.easeHold ? 1 : input.sheet) * 100 + '%';
     $('sheetctl').classList.toggle('auto', world.autoTrim);
+    $('bease').classList.toggle('on', !!input.easeHold);
     // Windfäden
     const inner = $('tt-in'), outer = $('tt-out');
     const lu = p.luff, ov = p.over;
