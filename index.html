@@ -844,7 +844,9 @@ const SIM = (() => {
       let kiteOver = 0;
       if (C.kite) {
         const lim = C.kite === 'sym' ? 85 : 70;
-        if (twa > 100) target *= 0.82 + 0.18 * b.kiteF;
+        // Gennaker zu tief (im Windschatten des Großsegels) -> fällt ein
+        b.kiteBlank = C.kite === 'asym' ? clamp((twa - 158) / 14, 0, 1) * b.kiteF : clamp((twa - 176) / 6, 0, 1) * b.kiteF * 0.4;
+        if (twa > 100) target *= (0.82 + 0.18 * b.kiteF) * (1 - 0.12 * b.kiteBlank);
         else if (twa > lim) target *= 1 + 0.06 * b.kiteF;
         else if (b.kiteF > 0.25) {
           kiteOver = clamp((lim - twa) / 25, 0, 1) * b.kiteF;
@@ -2279,7 +2281,7 @@ void main(){
     updateJib(time) {
       const b = this.b, S = this.S, J = S.jib, L = this.L, sc = this.sc;
       const side = b.boom >= 0 ? 1 : -1, awa = b.awa || 40;
-      const blanket = b.kiteF > 0.5 ? 1 : 0;
+      const blanket = b.kiteF > 0.5 ? 0.12 : 0; // unter Gennaker/Spi steht die Fock ruhig im Windschatten
       const jl = Math.max(b.luff || 0, awa > 135 ? clamp((awa - 135) / 30, 0, 1) : 0, blanket);
       const jTarget = side * clamp(Math.abs(b.boom) * 0.55 + 8 * DEG, 9 * DEG, 30 * DEG);
       this.jibAng += (jTarget - this.jibAng) * 0.15;
@@ -2333,7 +2335,13 @@ void main(){
       const span = Math.hypot(C[0] - T[0], C[2] - T[2]) + 1e-3;
       const fwd = -1, depth = (S.kite.type === 'sym' ? 0.55 : 0.42) * span * ff;
       const p = this.kiteGeo.attributes.position.array; let k = 0;
-      const breathe = 1 + Math.sin(time * 2.1) * 0.03;
+      const breathe = 1 + Math.sin(time * 0.9 + b.idx) * 0.015;
+      // Einfallen nur bei echter Ursache: zu hoch am Wind (kiteOver) oder zu tief im Windschatten (kiteBlank)
+      const twaK = Math.abs(b.twa || 0) / DEG;
+      const blank = b.kiteBlank != null ? b.kiteBlank : (S.kite.type === 'asym' ? clamp((twaK - 158) / 14, 0, 1) * f : 0);
+      const ko = Math.max(b.kiteOver || 0, blank);
+      // gelegentliches leichtes Einrollen des Vorlieks wie beim optimalen Trimm ("am Einfallen gefahren")
+      const curlAmt = 0.25 * Math.max(0, Math.sin(time * 0.7 + b.idx * 1.3)) ** 6 + ko;
       for (let j = 0; j <= 14; j++) {
         const v = j / 14;
         const Lp = lerp3(T, Hd, v), Qp = lerp3(C, Hd, v);
@@ -2341,10 +2349,10 @@ void main(){
         for (let i = 0; i <= 10; i++) {
           const u = i / 10;
           const P = lerp3(Lp, Qp, u);
-          const bu = Math.sin(Math.PI * u) * bulgeV * depth * breathe;
-          const ko = b.kiteOver || 0;
-          const curl = (u < 0.15 ? Math.sin(time * 9 + v * 6) * 0.04 * span * (0.15 - u) / 0.15 : 0) + ko * Math.sin(time * 14 - u * 6 + v * 4) * 0.12 * span * Math.sin(Math.PI * u);
-          p[k++] = P[0] + side * bu * 0.55 + curl; p[k++] = P[1] + bu * 0.1; p[k++] = P[2] + fwd * bu * 0.85;
+          const bu = Math.sin(Math.PI * u) * bulgeV * depth * breathe * (1 - 0.55 * ko);
+          const curl = (u < 0.2 ? -curlAmt * 0.06 * span * (0.2 - u) / 0.2 * (0.6 + 0.4 * Math.sin(time * 6 + v * 5) * Math.min(1, ko * 2 + 0.2)) : 0)
+            + ko * Math.sin(time * 11 - u * 6 + v * 4) * 0.1 * span * Math.sin(Math.PI * u);
+          p[k++] = P[0] + side * (bu * 0.55 + curl); p[k++] = P[1] + bu * 0.1; p[k++] = P[2] + fwd * bu * 0.85;
         }
       }
       this.kiteGeo.attributes.position.needsUpdate = true; this.kiteGeo.computeVertexNormals();
@@ -2924,7 +2932,7 @@ void main(){
       kb.classList.toggle('up', up);
       const tw = Math.abs(p.twa) / DEG;
       kb.classList.toggle('hint', !p.kiteCmd && tw > 100 && p.leg >= 1 && !p.done);
-      kb.classList.toggle('warn', p.kiteF > 0.3 && tw < (kc === 'sym' ? 85 : 70));
+      kb.classList.toggle('warn', (p.kiteF > 0.3 && tw < (kc === 'sym' ? 85 : 70)) || (p.kiteBlank || 0) > 0.4);
     }
     $('status').textContent = st;
     $('status').className = p.penalty > 0 || p.ocs ? 'bad' : '';
@@ -2936,7 +2944,9 @@ void main(){
     else if (p.luff > 0.12) { tt = 'Segel killt – dichtholen ↑'; tcls = 'bad'; }
     else if (p.over > 0.3) { tt = 'Zu dicht – fieren ↓'; tcls = 'warn'; }
     else { tt = 'Trimm optimal'; tcls = 'good'; }
-    if (world.autoTrim) { const eased = p.sheetT > (p.autoSheet || 0) + 0.03; tt = eased ? 'Auto-Trimm – gefiert' : 'Auto-Trimm'; tcls = eased ? 'warn' : 'good'; }
+    if ((p.kiteOver || 0) > 0.4) { tt = kiteName() + ' überpowert – abfallen'; tcls = 'bad'; }
+    else if ((p.kiteBlank || 0) > 0.4) { tt = kiteName() + ' fällt ein – anluven'; tcls = 'warn'; }
+    else if (world.autoTrim) { const eased = p.sheetT > (p.autoSheet || 0) + 0.03; tt = eased ? 'Auto-Trimm – gefiert' : 'Auto-Trimm'; tcls = eased ? 'warn' : 'good'; }
     const te = $('trimtxt'); te.textContent = tt; te.className = tcls;
     const ideal = clamp((p.idealBoom - 3) / 82, 0, 1);
     $('idealzone').style.left = clamp(ideal * 100 - 4, 0, 100) + '%';
