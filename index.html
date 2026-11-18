@@ -3277,7 +3277,7 @@ const MODELS = { "49er": {"pos": "foy5v1kXBz8+eRxAfoy5v1kXBz8+eRxAAG+5vzm0CD+qgh
     const cls = cfg ? cfg.cls : SIM.CLASSES[settings.cls] ? settings.cls : '470';
     let fleet;
     if (cfg) {
-      fleet = cfg.fleet.map((f, i) => ({ ...FLEET[i % FLEET.length], sailNo: sailNoFor(cls, i), name: f.human ? f.name : FLEET[i % FLEET.length].name, human: f.human, netId: f.id, isPlayer: i === mp.mySlot }));
+      fleet = cfg.fleet.map((f, i) => ({ ...FLEET[i % FLEET.length], sailNo: sailNoFor(cls, i), name: f.human ? f.name : FLEET[i % FLEET.length].name === 'Du' ? 'Kranich' : FLEET[i % FLEET.length].name, human: f.human, netId: f.id, isPlayer: i === mp.mySlot }));
     } else fleet = fleetFor(cls).slice(0, settings.course === 'ac' ? 2 : 6);
     const courseType = cfg ? cfg.course : settings.course;
     const def = cfg ? cfg.def : settings.course === 'custom' ? settings.customDef : null;
@@ -3425,7 +3425,7 @@ const MODELS = { "49er": {"pos": "foy5v1kXBz8+eRxAfoy5v1kXBz8+eRxAAG+5vzm0CD+qgh
           if (e.s === -30) { Sound.horn(0.5); toast('Noch 30 Sekunden', 1.8); }
           else { Sound.beep(); if (e.s === -10) toast('10 Sekunden!', 1.5); }
           break;
-        case 'gun': Sound.horn(1.2); if (!p.ocs) toast('START!', 1.8, 'good'); break;
+        case 'gun': Sound.horn(1.2); if (!p || !p.ocs) toast('START!', 1.8, 'good'); break;
         case 'ocs': if (e.boat === p) { toast('Frühstart! Zurück hinter die Startlinie', 4, 'bad'); } break;
         case 'ocsClear': if (e.boat === p) toast('Zurück hinter der Linie – jetzt neu starten!', 3, 'good'); break;
         case 'started': if (e.boat === p) toast('Gestartet! Kreuz zur Luvtonne – an Backbord lassen', 3.5, 'good'); break;
