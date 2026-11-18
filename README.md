@@ -18,6 +18,12 @@ Ein 3D-Segelspiel im Browser. Bis zu 12 Leute segeln live gegeneinander; der Hos
    (oder Seite öffnen → Mehrspieler → Code eingeben).
 4. Sind alle in der Liste, startet der Host mit **Rennen starten**. Freie Plätze bis 6 Boote füllen KI-Boote auf (abschaltbar).
 
+## Eigene Kurse bauen
+
+- Im Hauptmenü **✎ Kurs bauen**: Tonnen, Tore, Startlinie und (optional) eine eigene Ziellinie auf die Karte setzen und verschieben, Reihenfolge und Rundungsseite (Bb rot / Stb grün) in der Route festlegen.
+- Vorlagen (Up & Down, Dreieck, Innerloop, SailGP) als Startpunkt; Schenkellängen werden für die gewählte Bootsklasse angezeigt.
+- Kurse speichern, per **Kurs-Code** teilen und mit **Code laden** übernehmen. Im Mehrspieler bekommen alle automatisch den Kurs des Hosts.
+
 ## Regattaleitung & Analyse
 
 - Im Mehrspieler-Menü **„Ich segle nicht mit – Regattaleitung“** ankreuzen: Der Host segelt nicht mit, sieht das ganze Feld in der Totalen (Rangliste antippen = Boot verfolgen, ziehen = drehen, Mausrad/＋－ = Zoom) und das Rennen wird aufgezeichnet.

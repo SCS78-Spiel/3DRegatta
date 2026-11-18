@@ -153,6 +153,26 @@ body.replaying #specend{display:none}
 #anasplits h3{font-size:15px;margin:14px 0 4px}
 #anasplits table{font-size:12.5px}
 @media (max-width:700px){ body.spectating #spec{width:calc(100% - 130px);max-height:44vh;top:8px;left:8px;padding:8px} #speclist{font-size:12px} }
+.cedcard{width:min(1100px,100%)}
+.cedgrid{display:grid;grid-template-columns:1fr 330px;gap:14px;margin-top:8px}
+#cedtools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+#cedtools button.sel{background:#fff;color:#0b2440}
+.cedmapwrap{position:relative}
+#cedmap{width:100%;height:min(62vh,560px);border-radius:12px;display:block;touch-action:none;cursor:crosshair}
+.cedzoom{position:absolute;right:8px;bottom:8px;display:flex;gap:4px}
+#cedmsg{font-size:12.5px;font-weight:600;margin-top:6px;min-height:17px;opacity:.9}
+.cedright h3{font-size:14px;margin:12px 0 6px}.cedright h3 small{font-weight:500;opacity:.6;font-size:11px;margin-left:6px}
+.cedrow{display:flex;gap:6px;margin:6px 0;align-items:center;flex-wrap:wrap}
+.cedgrid>div{min-width:0}
+.cedcard{overflow-x:hidden}
+.cedrow input,.cedrow select{flex:1;min-width:0;background:rgba(255,255,255,.1);border:1px solid var(--line);border-radius:9px;color:#fff;font:600 13px Inter,sans-serif;padding:8px 10px;user-select:text;-webkit-user-select:text}
+.cedrow select option{color:#000}
+#cedroute{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto}
+#cedroute li{display:flex;gap:5px;align-items:center;padding:5px 4px;border-bottom:1px solid var(--line);font-size:13px}
+#cedroute li b{width:18px;opacity:.7}
+#cedroute .nm{flex:1;display:flex;flex-direction:column}#cedroute .nm small{opacity:.6;font-size:11px}
+.mini.side.bb{background:rgba(255,77,77,.35)}.mini.side.stb{background:rgba(61,220,151,.35)}.mini.side.gate{opacity:.6}
+@media (max-width:820px){ .cedgrid{grid-template-columns:1fr} #cedmap{height:48vh} }
 #resstats{font-size:12.5px;opacity:.65;margin-top:10px}
 @media (max-width:700px){
   .clsgrid{grid-template-columns:repeat(2,1fr)}
@@ -261,7 +281,8 @@ body.replaying #specend{display:none}
       <button data-v="f50"><b>F50</b><span>SailGP-Foilkat</span></button>
       <button data-v="imoca"><b>IMOCA 60</b><span>Hochsee · Foils</span></button>
     </div>
-    <div class="opt"><label>Kurs</label><div class="seg" data-key="course"><button data-v="ud">Up&amp;Down</button><button data-v="tri">Dreieck</button><button data-v="inner">Innerloop</button><button data-v="sailgp">SailGP</button></div></div>
+    <div class="opt"><label>Kurs</label><div class="seg" data-key="course"><button data-v="ud">Up&amp;Down</button><button data-v="tri">Dreieck</button><button data-v="inner">Innerloop</button><button data-v="sailgp">SailGP</button><button data-v="custom">Eigener</button></div></div>
+    <div class="menurow" style="margin-top:2px"><button class="mini" id="bced">✎ Kurs bauen</button><span class="hint" id="customname" style="margin:0"></span></div>
     <div class="opt"><label>Runden</label><div class="seg" data-key="laps"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
     <div class="opt"><label>KI-Gegner</label><div class="seg" data-key="difficulty"><button data-v="easy">Leicht</button><button data-v="medium">Mittel</button><button data-v="pro">Profi</button></div></div>
     <div class="opt"><label>Segeltrimm</label><div class="seg" data-key="trim"><button data-v="manual">Manuell</button><button data-v="auto">Automatisch</button></div></div>
@@ -323,6 +344,34 @@ body.replaying #specend{display:none}
     <div class="anabtns"><button class="mini" id="ana3d">3D-Wiedergabe ab hier</button><button class="mini" id="anasave">Aufzeichnung speichern</button><label class="mini filebtn">Laden<input type="file" id="anaload" accept=".json,application/json"></label></div>
     <div class="tablewrap"><table id="anatable"></table></div>
     <div id="anasplits"></div>
+  </div>
+</div>
+
+<div id="ced" class="overlay hidden">
+  <div class="card cedcard">
+    <div class="anahead"><div><h1 style="font-size:26px">Kurs bauen</h1><div class="hint">Wind kommt von oben. Rot = an Backbord runden, grün = an Steuerbord.</div></div><button class="mini" id="cedcancel">✕</button></div>
+    <div class="cedgrid">
+      <div class="cedleft">
+        <div id="cedtools">
+          <button class="mini" data-tool="select">✋ Verschieben</button><button class="mini" data-tool="mark">＋ Tonne</button><button class="mini" data-tool="gate">＋ Tor</button>
+          <button class="mini" data-tool="route">↪ Route</button><button class="mini" data-tool="start">Startlinie</button><button class="mini" data-tool="del">🗑 Löschen</button>
+        </div>
+        <div class="cedmapwrap"><canvas id="cedmap"></canvas>
+          <div class="cedzoom"><button class="mini" id="cedzin">＋</button><button class="mini" id="cedzout">－</button><button class="mini" id="cedfit">⤢</button></div></div>
+        <div id="cedmsg"></div>
+      </div>
+      <div class="cedright">
+        <div class="cedrow"><select id="cedtpl"><option value="">Vorlage laden …</option><option value="empty">Leer (nur Startlinie)</option><option value="ud">Up &amp; Down</option><option value="tri">Dreieck</option><option value="inner">Innerloop</option><option value="sailgp">SailGP</option></select></div>
+        <h3>Route <small id="cedtotal"></small></h3>
+        <ol id="cedroute"></ol>
+        <div class="cedrow"><button class="mini" id="cedfin">Eigene Ziellinie</button><button class="mini" id="cedkind">Farbe</button></div>
+        <h3>Speichern &amp; Teilen</h3>
+        <div class="cedrow"><input id="cedname" maxlength="30" placeholder="Name des Kurses"><button class="mini" id="cedsave">Speichern</button></div>
+        <div class="cedrow"><select id="cedsaved"></select><button class="mini" id="ceddel">Löschen</button></div>
+        <div class="cedrow"><input id="cedcode" placeholder="Kurs-Code"><button class="mini" id="cedcopy">Code kopieren</button><button class="mini" id="cedpaste">Code laden</button></div>
+        <button class="big-btn" id="cedok">Diesen Kurs segeln</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -391,8 +440,22 @@ const SIM = (() => {
     tri: { name: 'Dreieck' },
     inner: { name: 'Innerloop' },
     sailgp: { name: 'SailGP' },
+    custom: { name: 'Eigener Kurs' },
   };
-  function buildCourse(type, laps, s) {
+  // Eigener Kurs: def = { start:{ax,az,bx,bz}, finish:null|{ax,az,bx,bz}, marks:[{x,z,kind}], gates:[{x,z,w}], route:[{t:'m',i,side}|{t:'g',i}] } (Grundeinheiten)
+  function validateDef(def) {
+    if (!def || !def.start || !Array.isArray(def.route) || !def.route.length) return 'Startlinie und mindestens eine Tonne in der Route nötig';
+    for (const st of def.route) {
+      if (st.t === 'm' && !(def.marks || [])[st.i]) return 'Route verweist auf fehlende Tonne';
+      if (st.t === 'g' && !(def.gates || [])[st.i]) return 'Route verweist auf fehlendes Tor';
+    }
+    const sl = Math.hypot(def.start.bx - def.start.ax, def.start.bz - def.start.az);
+    if (sl < 30) return 'Startlinie ist zu kurz';
+    if (def.finish && Math.hypot(def.finish.bx - def.finish.ax, def.finish.bz - def.finish.az) < 20) return 'Ziellinie ist zu kurz';
+    return null;
+  }
+  function buildCourse(type, laps, s, def) {
+    if (type === 'custom' && validateDef(def)) type = 'ud';
     const P = (x, z) => ({ x: x * s, z: z * s });
     const marks = [];
     const mk = (id, x, z, kind, name) => { const m = { id, ...P(x, z), r: kind === 'small' ? 0.8 : 1.15, kind, name }; marks.push(m); return m; };
@@ -423,6 +486,27 @@ const SIM = (() => {
       for (let i = 0; i < laps; i++) route.push({ t: 'gate', a: W1, b: W2, name: 'Luvtor' }, { t: 'gate', a: L1, b: L2, name: 'Leetor' });
       const FA = mk('FA', 170, 95, 'fin', 'Ziel'), FB = mk('FB', 170, 185, 'fin', 'Ziel');
       finish = { a: FA, b: FB, name: 'Ziel (Raum)' };
+    } else if (type === 'custom') {
+      const D = def;
+      const pin = mk('PIN', D.start.ax, D.start.az, 'small', 'Pin'), cb = mk('CB', D.start.bx, D.start.bz, 'cb', 'Startschiff');
+      start = { a: pin, b: cb, n: { x: 0, z: -1 } };
+      const mks = (D.marks || []).map((m, i) => mk('M' + (i + 1), m.x, m.z, m.kind === 'lee' ? 'lee' : 'wind', 'Tonne ' + (i + 1)));
+      const gts = (D.gates || []).map((g, i) => {
+        const hw = Math.max(10, (g.w || 60) / 2);
+        return { a: mk('G' + (i + 1) + 's', g.x - hw, g.z, 'lee', 'Tor ' + String.fromCharCode(65 + i)), b: mk('G' + (i + 1) + 'p', g.x + hw, g.z, 'lee', 'Tor ' + String.fromCharCode(65 + i)), name: 'Tor ' + String.fromCharCode(65 + i) };
+      });
+      for (let l = 0; l < laps; l++) for (const st of D.route) {
+        if (st.t === 'm') route.push({ t: 'mark', m: mks[st.i], side: st.side < 0 ? -1 : 1 });
+        else { const g = gts[st.i]; route.push({ t: 'gate', a: g.a, b: g.b, name: g.name }); }
+      }
+      if (D.finish) { const FA = mk('FA', D.finish.ax, D.finish.az, 'fin', 'Ziel'), FB = mk('FB', D.finish.bx, D.finish.bz, 'fin', 'Ziel'); finish = { a: FA, b: FB, name: 'Ziel' }; }
+      else finish = { a: start.a, b: start.b, name: 'Ziel' };
+      // Bahnseite der Startlinie: Richtung zum ersten Kurspunkt
+      const f = route[0], fx = f.t === 'mark' ? f.m.x : (f.a.x + f.b.x) / 2, fz = f.t === 'mark' ? f.m.z : (f.a.z + f.b.z) / 2;
+      const ux = cb.x - pin.x, uz = cb.z - pin.z, ul = Math.hypot(ux, uz) || 1;
+      let nx = -uz / ul, nz = ux / ul;
+      if ((fx - (pin.x + cb.x) / 2) * nx + (fz - (pin.z + cb.z) / 2) * nz < 0) { nx = -nx; nz = -nz; }
+      start.n = { x: nx, z: nz };
     } else {
       start = stdStart();
       const W = mk('W', 0, -420, 'wind', 'Luvtonne');
@@ -525,7 +609,7 @@ const SIM = (() => {
       this.s = C.course;
       this.k = clamp(C.L / 5, 0.5, 3.2);
       this.half = C.L * 0.45;
-      this.course = buildCourse(opts.course || 'ud', clamp(opts.laps || 1, 1, 5), this.s);
+      this.course = buildCourse(opts.course || 'ud', clamp(opts.laps || 1, 1, 5), this.s, opts.def);
       this.rng = mulberry32(opts.seed || 1);
       this.rngW = mulberry32(((opts.seed || 1) ^ 0x9e3779b9) >>> 0); // eigener Zufall für Böen -> bei allen Spielern gleich
       const r = this.rng, s = this.s, st = this.course.start;
@@ -1129,7 +1213,18 @@ const SIM = (() => {
     ranking() { return this.boats.slice().sort((a, c) => this.progress(c) - this.progress(a)); }
   }
 
-  return { World, CLASSES, COURSES, buildCourse, polar, optAngles, idealBoom, wrap, clamp, bearing, DEG, KN, SPEED_SCALE };
+  // Vorlage aus eingebautem Kurs (für den Editor)
+  function defFromCourse(type) {
+    const C = buildCourse(type, 1, 1), marks = [], gates = [], route = [];
+    const mi = new Map(), gi = new Map();
+    for (const st of C.route) {
+      if (st.t === 'mark') { if (!mi.has(st.m)) { mi.set(st.m, marks.length); marks.push({ x: st.m.x, z: st.m.z, kind: st.m.kind === 'lee' ? 'lee' : 'wind' }); } route.push({ t: 'm', i: mi.get(st.m), side: st.side }); }
+      else { const key = st.a.id; if (!gi.has(key)) { gi.set(key, gates.length); gates.push({ x: (st.a.x + st.b.x) / 2, z: (st.a.z + st.b.z) / 2, w: Math.hypot(st.b.x - st.a.x, st.b.z - st.a.z) }); } route.push({ t: 'g', i: gi.get(key) }); }
+    }
+    const same = C.finish.a === C.start.a;
+    return { start: { ax: C.start.a.x, az: C.start.a.z, bx: C.start.b.x, bz: C.start.b.z }, finish: same ? null : { ax: C.finish.a.x, az: C.finish.a.z, bx: C.finish.b.x, bz: C.finish.b.z }, marks, gates, route };
+  }
+  return { World, CLASSES, COURSES, buildCourse, validateDef, defFromCourse, polar, optAngles, idealBoom, wrap, clamp, bearing, DEG, KN, SPEED_SCALE };
 })();
 if (typeof module !== 'undefined') module.exports = SIM;
 
@@ -2757,7 +2852,10 @@ void main(){
     if (cfg) {
       fleet = cfg.fleet.map((f, i) => ({ ...FLEET[i % FLEET.length], sailNo: sailNoFor(cls, i), name: f.human ? f.name : FLEET[i % FLEET.length].name, human: f.human, netId: f.id, isPlayer: i === mp.mySlot }));
     } else fleet = fleetFor(cls);
-    world = new World({ seed: cfg ? cfg.seed : (Math.random() * 1e9) | 0, difficulty: cfg ? cfg.difficulty : settings.difficulty, fleet, autoTrim: settings.trim === 'auto', cls, course: cfg ? cfg.course : settings.course, laps: cfg ? +cfg.laps : +settings.laps });
+    const courseType = cfg ? cfg.course : settings.course;
+    const def = cfg ? cfg.def : settings.course === 'custom' ? settings.customDef : null;
+    if (courseType === 'custom' && SIM.validateDef(def)) toast('Eigener Kurs unvollständig – Up & Down wird gesegelt', 3, 'bad');
+    world = new World({ seed: cfg ? cfg.seed : (Math.random() * 1e9) | 0, difficulty: cfg ? cfg.difficulty : settings.difficulty, fleet, autoTrim: settings.trim === 'auto', cls, course: courseType, laps: cfg ? +cfg.laps : +settings.laps, def });
     world.clsKey = cls;
     if (cfg) {
       world.mp = mp;
@@ -2873,6 +2971,7 @@ void main(){
     seg.querySelectorAll('button').forEach((b) => (b.onclick = () => {
       settings[key] = b.dataset.v === 'true' ? true : b.dataset.v === 'false' ? false : b.dataset.v; save(); set();
       if (key === 'cls' && state === 'menu') resetMenuScene();
+      if (key === 'course') { if (settings.course === 'custom' && !settings.customDef) openEditor(); updateCustomLabel(); }
     }));
     set();
   });
@@ -2949,7 +3048,7 @@ void main(){
   // ---------- HUD ----------
   const mapC = $('map'), mapG = mapC.getContext('2d');
   const roseC = $('rose'), roseG = roseC.getContext('2d');
-  function fitCanvas(c) { const r = c.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2); if (c.width !== Math.round(r.width * d)) { c.width = Math.round(r.width * d); c.height = Math.round(r.height * d); } return d; }
+  function fitCanvas(c) { const r = c.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2); if (c.width !== Math.round(r.width * d) || c.height !== Math.round(r.height * d)) { c.width = Math.round(r.width * d); c.height = Math.round(r.height * d); } return d; }
   function legKind(twa) { return twa < 70 ? 'Kreuz' : twa < 140 ? 'Raumkurs' : 'Vorwind'; }
   function stepLabel(st) {
     const k = legKind(st.legTwa);
@@ -3409,7 +3508,7 @@ void main(){
     const n = Math.min(MAXP, Math.max(humans.length, mp.fillAI ? 6 : humans.length));
     const fleet = [];
     for (let i = 0; i < n; i++) fleet.push(i < humans.length ? { human: true, name: humans[i].name, id: humans[i].id } : { human: false });
-    const cfg = { seed: (Math.random() * 1e9) | 0, cls: SIM.CLASSES[settings.cls] ? settings.cls : '470', course: settings.course, laps: settings.laps, difficulty: settings.difficulty, fleet, t: -60 };
+    const cfg = { seed: (Math.random() * 1e9) | 0, cls: SIM.CLASSES[settings.cls] ? settings.cls : '470', course: settings.course, def: settings.course === 'custom' ? settings.customDef : null, laps: settings.laps, difficulty: settings.difficulty, fleet, t: -60 };
     mp.cfg = cfg; mp.started = true; mp.mySlot = specOn ? -1 : 0;
     for (const h of humans) if (h.id !== 'host') Net.send(h.id, { type: 'start', cfg, you: h.id });
     hideMP(); startRace(cfg);
@@ -3462,7 +3561,7 @@ void main(){
       this.cur = {
         v: 1,
         meta: {
-          date: new Date().toISOString(), cls: world.clsKey, course: world.course.type, laps: world.course.laps, seed: world.opts.seed, s: world.s,
+          date: new Date().toISOString(), cls: world.clsKey, course: world.course.type, def: world.opts.def || null, laps: world.course.laps, seed: world.opts.seed, s: world.s,
           difficulty: world.opts.difficulty,
           boats: world.boats.map((b) => ({ name: b.name, sailNo: b.sailNo, color: b.color, human: !!(b.human || b.isPlayer), me: !!b.isPlayer })),
         },
@@ -3576,7 +3675,7 @@ void main(){
     return o;
   }
   function analyse(rec) {
-    const C = SIM.buildCourse(rec.meta.course, rec.meta.laps, rec.meta.s);
+    const C = SIM.buildCourse(rec.meta.course, rec.meta.laps, rec.meta.s, rec.meta.def);
     const F = rec.frames, nb = rec.meta.boats.length;
     const stats = rec.meta.boats.map((m, i) => ({ i, name: m.name, color: m.color, human: m.human, me: m.me, track: [], dist: 0, vsum: 0, vn: 0, vmax: 0, tacks: 0, gybes: 0, pens: 0, fly: 0, flyN: 0, start: null, finish: null, splits: [] }));
     for (let fi = 0; fi < F.length; fi++) {
@@ -3726,7 +3825,7 @@ void main(){
     spray.clear();
     const m = rec.meta;
     const fleet = m.boats.map((b, i) => ({ ...FLEET[i % FLEET.length], name: b.name, sailNo: b.sailNo, color: b.color, isPlayer: false, human: b.human }));
-    world = new World({ seed: m.seed, difficulty: m.difficulty || 'medium', fleet, autoTrim: true, cls: m.cls, course: m.course, laps: m.laps });
+    world = new World({ seed: m.seed, difficulty: m.difficulty || 'medium', fleet, autoTrim: true, cls: m.cls, course: m.course, laps: m.laps, def: m.def });
     world.clsKey = m.cls;
     world.player = undefined;
     world.boats.forEach((b) => { b.remote = true; });
@@ -3763,6 +3862,281 @@ void main(){
   $('rana').onclick = () => { if (replay) { const r = replay.rec, t = replay.t; openAnalysis(r); ana.t = t; $('anaslider').value = t; drawAna(); } };
   $('specin').onclick = () => { spec.zoom = clamp(spec.zoom * 0.75, 0.12, 2.5); };
   $('specout').onclick = () => { spec.zoom = clamp(spec.zoom / 0.75, 0.12, 2.5); };
+  // =================== Kurs-Editor ===================
+  const CED_KEY = 'regatta3d-courses';
+  const ced = { def: null, tool: 'select', sel: null, view: { cx: 0, cz: -150, k: 0.8 }, drag: null, pointers: new Map(), name: '' };
+  const cloneDef = (d) => JSON.parse(JSON.stringify(d));
+  const emptyDef = () => ({ start: { ax: -95, az: 0, bx: 95, bz: 0 }, finish: null, marks: [], gates: [], route: [] });
+  function savedCourses() { try { return JSON.parse(localStorage.getItem(CED_KEY) || '[]'); } catch (e) { return []; } }
+  function storeCourses(list) { try { localStorage.setItem(CED_KEY, JSON.stringify(list)); return true; } catch (e) { return false; } }
+  function encodeDef(def, name) { return 'RG1:' + btoa(unescape(encodeURIComponent(JSON.stringify({ n: name || '', d: def })))); }
+  function decodeDef(code) {
+    const c = String(code || '').trim().replace(/^RG1:/, '');
+    const o = JSON.parse(decodeURIComponent(escape(atob(c))));
+    if (!o || !o.d || !o.d.start || !Array.isArray(o.d.route)) throw new Error('ungültig');
+    o.d.marks = o.d.marks || []; o.d.gates = o.d.gates || [];
+    return o;
+  }
+  const cedClsS = () => (SIM.CLASSES[settings.cls] || SIM.CLASSES['470']).course;
+
+  function openEditor() {
+    ced.def = cloneDef(settings.customDef || SIM.defFromCourse('ud'));
+    ced.name = settings.customName || '';
+    $('cedname').value = ced.name;
+    ced.tool = 'select'; ced.sel = null;
+    $('ced').classList.remove('hidden'); $('menu').classList.add('hidden');
+    fitEditor(); refreshSaved(); cedUI();
+  }
+  function closeEditor(apply) {
+    if (apply) {
+      const err = SIM.validateDef(ced.def);
+      if (err) { cedMsg(err, 'bad'); return; }
+      settings.customDef = cloneDef(ced.def); settings.customName = ($('cedname').value || '').trim().slice(0, 30);
+      settings.course = 'custom'; save();
+      document.querySelectorAll('.seg[data-key="course"] button').forEach((b) => b.classList.toggle('sel', b.dataset.v === 'custom'));
+    }
+    $('ced').classList.add('hidden'); $('menu').classList.remove('hidden');
+    updateCustomLabel();
+  }
+  function updateCustomLabel() {
+    const el = $('customname');
+    if (el) el.textContent = settings.course === 'custom' ? (settings.customName ? '„' + settings.customName + '“' : 'eigener Kurs') : '';
+  }
+  function cedMsg(t, cls = '') { const el = $('cedmsg'); el.textContent = t || ''; el.className = cls; }
+
+  // ---- Koordinaten ----
+  function cedCanvas() { return $('cedmap'); }
+  function toScreen(x, z) { const c = cedCanvas(), r = c.getBoundingClientRect(); return [r.width / 2 + (x - ced.view.cx) * ced.view.k, r.height / 2 + (z - ced.view.cz) * ced.view.k]; }
+  function toWorld(px, py) { const c = cedCanvas(), r = c.getBoundingClientRect(); return [(px - r.width / 2) / ced.view.k + ced.view.cx, (py - r.height / 2) / ced.view.k + ced.view.cz]; }
+  function allPoints() {
+    const d = ced.def, P = [[d.start.ax, d.start.az], [d.start.bx, d.start.bz]];
+    if (d.finish) P.push([d.finish.ax, d.finish.az], [d.finish.bx, d.finish.bz]);
+    d.marks.forEach((m) => P.push([m.x, m.z])); d.gates.forEach((g) => P.push([g.x - g.w / 2, g.z], [g.x + g.w / 2, g.z]));
+    return P;
+  }
+  function fitEditor() {
+    const c = cedCanvas(), r = c.getBoundingClientRect();
+    const P = allPoints();
+    let x0 = Math.min(...P.map((p) => p[0])), x1 = Math.max(...P.map((p) => p[0])), z0 = Math.min(...P.map((p) => p[1])), z1 = Math.max(...P.map((p) => p[1]));
+    if (P.length < 3) { x0 -= 300; x1 += 300; z0 -= 450; z1 += 200; }
+    ced.view.cx = (x0 + x1) / 2; ced.view.cz = (z0 + z1) / 2;
+    ced.view.k = clamp(Math.min((r.width - 70) / Math.max(120, x1 - x0), (r.height - 70) / Math.max(120, z1 - z0)), 0.08, 4);
+  }
+
+  // ---- Zeichnen ----
+  function legKindOf(ax, az, bx, bz) { const twa = Math.abs(wrap(0 - SIM.bearing(ax, az, bx, bz))) / DEG; return twa < 70 ? 'Kreuz' : twa < 140 ? 'Raumkurs' : 'Vorwind'; }
+  function stepPoint(st) { const d = ced.def; if (st.t === 'm') { const m = d.marks[st.i]; return m ? [m.x, m.z] : null; } const g = d.gates[st.i]; return g ? [g.x, g.z] : null; }
+  function drawEditor() {
+    const c = cedCanvas(), d0 = fitCanvas(c), W = c.width / d0, H = c.height / d0, g = c.getContext('2d');
+    g.setTransform(d0, 0, 0, d0, 0, 0);
+    g.fillStyle = '#0b2a47'; g.fillRect(0, 0, W, H);
+    const d = ced.def, k = ced.view.k, S = (x, z) => toScreen(x, z);
+    // Raster (100 Grundeinheiten)
+    const step = k < 0.25 ? 500 : 100;
+    const [wx0, wz0] = toWorld(0, 0), [wx1, wz1] = toWorld(W, H);
+    g.strokeStyle = 'rgba(255,255,255,0.06)'; g.lineWidth = 1;
+    for (let x = Math.floor(wx0 / step) * step; x <= wx1; x += step) { const [px] = S(x, 0); g.beginPath(); g.moveTo(px, 0); g.lineTo(px, H); g.stroke(); }
+    for (let z = Math.floor(wz0 / step) * step; z <= wz1; z += step) { const [, py] = S(0, z); g.beginPath(); g.moveTo(0, py); g.lineTo(W, py); g.stroke(); }
+    // Route
+    const pts = [[(d.start.ax + d.start.bx) / 2, (d.start.az + d.start.bz) / 2]];
+    d.route.forEach((st) => { const p = stepPoint(st); if (p) pts.push(p); });
+    pts.push(d.finish ? [(d.finish.ax + d.finish.bx) / 2, (d.finish.az + d.finish.bz) / 2] : pts[0]);
+    g.strokeStyle = 'rgba(255,176,32,0.75)'; g.lineWidth = 2; g.setLineDash([7, 5]);
+    g.beginPath(); pts.forEach((p, i) => { const [x, y] = S(p[0], p[1]); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); g.setLineDash([]);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x0, y0] = S(pts[i][0], pts[i][1]), [x1, y1] = S(pts[i + 1][0], pts[i + 1][1]);
+      const mx = (x0 + x1) / 2, my = (y0 + y1) / 2, a = Math.atan2(y1 - y0, x1 - x0);
+      g.save(); g.translate(mx, my); g.rotate(a); g.fillStyle = '#ffb020'; g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, 5); g.lineTo(-5, -5); g.fill(); g.restore();
+    }
+    // Startlinie
+    const line = (L, col, label) => {
+      const [ax, ay] = S(L.ax, L.az), [bx, by] = S(L.bx, L.bz);
+      g.strokeStyle = col; g.lineWidth = 2; g.setLineDash([6, 5]); g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); g.setLineDash([]);
+      g.fillStyle = '#ff6a13'; g.beginPath(); g.arc(ax, ay, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff'; g.fillRect(bx - 7, by - 4, 14, 8);
+      g.fillStyle = col; g.font = '700 12px Inter, sans-serif'; g.fillText(label, (ax + bx) / 2 + 6, (ay + by) / 2 - 8);
+    };
+    line(d.start, '#ffffff', d.finish ? 'Start' : 'Start / Ziel');
+    if (d.finish) line(d.finish, '#8ec5ff', 'Ziel');
+    // Tore
+    d.gates.forEach((gt, i) => {
+      const [ax, ay] = S(gt.x - gt.w / 2, gt.z), [bx, by] = S(gt.x + gt.w / 2, gt.z);
+      g.strokeStyle = 'rgba(255,224,138,0.8)'; g.setLineDash([3, 4]); g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); g.setLineDash([]);
+      for (const [x, y] of [[ax, ay], [bx, by]]) { g.fillStyle = '#ffc21a'; g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.fill(); }
+      const sel = ced.sel && ced.sel.t === 'g' && ced.sel.i === i;
+      g.fillStyle = sel ? '#ffb020' : '#fff'; g.font = '800 13px Inter, sans-serif'; g.fillText('Tor ' + String.fromCharCode(65 + i), (ax + bx) / 2 - 18, ay - 12);
+      if (sel) { g.strokeStyle = '#ffb020'; g.lineWidth = 2; g.strokeRect(ax - 11, ay - 11, bx - ax + 22, 22); }
+    });
+    // Tonnen mit Rundungsseite
+    d.marks.forEach((m, i) => {
+      const [x, y] = S(m.x, m.z);
+      const sides = d.route.filter((st) => st.t === 'm' && st.i === i).map((st) => st.side);
+      sides.forEach((sd, j) => {
+        // Bb = rot, gegen den Uhrzeigersinn um die Tonne; Stb = grün, im Uhrzeigersinn
+        const col = sd > 0 ? '#ff4d4d' : '#3ddc97', r = 15 + j * 5, a0 = -Math.PI / 2, a1 = sd > 0 ? a0 - Math.PI * 1.3 : a0 + Math.PI * 1.3;
+        g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 2.5;
+        g.beginPath(); g.arc(x, y, r, a0, a1, sd > 0); g.stroke();
+        const ex = x + Math.cos(a1) * r, ey = y + Math.sin(a1) * r, ta = a1 + (sd > 0 ? -Math.PI / 2 : Math.PI / 2);
+        g.save(); g.translate(ex, ey); g.rotate(ta); g.beginPath(); g.moveTo(6, 0); g.lineTo(-3, 4); g.lineTo(-3, -4); g.fill(); g.restore();
+      });
+      g.fillStyle = m.kind === 'lee' ? '#ffc21a' : '#ff6a13'; g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#1b1300'; g.font = '800 11px Inter, sans-serif'; g.textAlign = 'center'; g.fillText(String(i + 1), x, y + 4); g.textAlign = 'left';
+      if (ced.sel && ced.sel.t === 'm' && ced.sel.i === i) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 12, 0, Math.PI * 2); g.stroke(); }
+    });
+    // Wind
+    g.save(); g.translate(W - 30, 34); g.strokeStyle = '#5ab0ff'; g.fillStyle = '#5ab0ff'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(0, -16); g.lineTo(0, 10); g.stroke(); g.beginPath(); g.moveTo(0, 17); g.lineTo(6, 7); g.lineTo(-6, 7); g.fill();
+    g.font = '700 11px Inter, sans-serif'; g.textAlign = 'right'; g.fillText('Wind', -12, -2); g.restore(); g.textAlign = 'left';
+    // Maßstab
+    const s = cedClsS(), barU = step, barPx = barU * k;
+    g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillRect(14, H - 22, barPx, 3);
+    g.font = '600 11px Inter, sans-serif'; g.fillText(`${Math.round(barU * s)} m (${(SIM.CLASSES[settings.cls] || SIM.CLASSES['470']).name})`, 14, H - 30);
+  }
+
+  // ---- Seitenleiste ----
+  function cedUI() {
+    document.querySelectorAll('#cedtools button').forEach((b) => b.classList.toggle('sel', b.dataset.tool === ced.tool));
+    const d = ced.def, s = cedClsS();
+    const names = (st) => (st.t === 'm' ? 'Tonne ' + (st.i + 1) : 'Tor ' + String.fromCharCode(65 + st.i));
+    let prev = [(d.start.ax + d.start.bx) / 2, (d.start.az + d.start.bz) / 2], total = 0;
+    const rows = d.route.map((st, k) => {
+      const p = stepPoint(st) || prev, len = Math.hypot(p[0] - prev[0], p[1] - prev[1]) * s; total += len;
+      const kind = legKindOf(prev[0], prev[1], p[0], p[1]); prev = p;
+      const side = st.t === 'm' ? `<button class="mini side ${st.side > 0 ? 'bb' : 'stb'}" data-k="${k}" data-a="side">${st.side > 0 ? 'Bb' : 'Stb'}</button>` : '<span class="mini side gate">Tor</span>';
+      return `<li><b>${k + 1}</b><span class="nm">${names(st)}<small>${kind} · ${Math.round(len)} m</small></span>${side}<button class="mini" data-k="${k}" data-a="up">▲</button><button class="mini" data-k="${k}" data-a="del">✕</button></li>`;
+    });
+    const fin = d.finish ? [(d.finish.ax + d.finish.bx) / 2, (d.finish.az + d.finish.bz) / 2] : [(d.start.ax + d.start.bx) / 2, (d.start.az + d.start.bz) / 2];
+    const flen = Math.hypot(fin[0] - prev[0], fin[1] - prev[1]) * s; total += flen;
+    rows.push(`<li class="fin"><b>Z</b><span class="nm">${d.finish ? 'Ziellinie' : 'Ziel an der Startlinie'}<small>${legKindOf(prev[0], prev[1], fin[0], fin[1])} · ${Math.round(flen)} m</small></span></li>`);
+    $('cedroute').innerHTML = rows.join('');
+    $('cedtotal').textContent = `Gesamt pro Runde ca. ${(total / 1000).toFixed(2)} km (${(SIM.CLASSES[settings.cls] || SIM.CLASSES['470']).name})`;
+    $('cedfin').textContent = d.finish ? 'Ziel = Startlinie' : 'Eigene Ziellinie';
+    const selM = ced.sel && ced.sel.t === 'm' ? d.marks[ced.sel.i] : null;
+    $('cedkind').style.display = selM ? '' : 'none';
+    if (selM) $('cedkind').textContent = selM.kind === 'lee' ? 'Tonne gelb → orange' : 'Tonne orange → gelb';
+    const err = SIM.validateDef(d);
+    cedMsg(err || hintFor(ced.tool), err ? 'bad' : '');
+    drawEditor();
+  }
+  function hintFor(t) {
+    return ({
+      select: 'Ziehen verschiebt Tonnen, Tore und Linienenden · leere Fläche ziehen = Karte verschieben',
+      mark: 'Tippe auf die Karte: neue Tonne (wird hinten an die Route angehängt)',
+      gate: 'Tippe auf die Karte: neues Tor (zwei Tonnen); Breite am rechten Ende ziehen',
+      route: 'Tonnen/Tore in der gewünschten Reihenfolge antippen – sie werden an die Route angehängt',
+      start: 'Tippe auf die Karte: Startlinie dorthin setzen (Enden danach ziehen)',
+      del: 'Tonne oder Tor antippen zum Löschen',
+    })[t] || '';
+  }
+
+  // ---- Treffer & Bearbeiten ----
+  function hit(px, py) {
+    const d = ced.def, R2 = 18 * 18, near = (x, z) => { const [sx, sy] = toScreen(x, z); return (sx - px) ** 2 + (sy - py) ** 2 < R2; };
+    for (let i = d.gates.length - 1; i >= 0; i--) { const gt = d.gates[i]; if (near(gt.x + gt.w / 2, gt.z)) return { t: 'gw', i }; if (near(gt.x - gt.w / 2, gt.z) || near(gt.x, gt.z)) return { t: 'g', i }; }
+    for (let i = d.marks.length - 1; i >= 0; i--) if (near(d.marks[i].x, d.marks[i].z)) return { t: 'm', i };
+    if (near(d.start.ax, d.start.az)) return { t: 'sa' };
+    if (near(d.start.bx, d.start.bz)) return { t: 'sb' };
+    if (d.finish && near(d.finish.ax, d.finish.az)) return { t: 'fa' };
+    if (d.finish && near(d.finish.bx, d.finish.bz)) return { t: 'fb' };
+    return null;
+  }
+  function removeElem(h) {
+    const d = ced.def;
+    if (h.t === 'm') { d.marks.splice(h.i, 1); d.route = d.route.filter((st) => !(st.t === 'm' && st.i === h.i)).map((st) => (st.t === 'm' && st.i > h.i ? { ...st, i: st.i - 1 } : st)); }
+    if (h.t === 'g' || h.t === 'gw') { d.gates.splice(h.i, 1); d.route = d.route.filter((st) => !(st.t === 'g' && st.i === h.i)).map((st) => (st.t === 'g' && st.i > h.i ? { ...st, i: st.i - 1 } : st)); }
+    ced.sel = null;
+  }
+  const cv = $('cedmap');
+  cv.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    const r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    ced.pointers.set(e.pointerId, { x: px, y: py });
+    if (ced.pointers.size === 2) { const [a, b] = [...ced.pointers.values()]; ced.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: ced.view.k }; ced.drag = null; return; }
+    const [wx, wz] = toWorld(px, py), d = ced.def, h = hit(px, py);
+    const snap = (v) => Math.round(v / 5) * 5;
+    if (ced.tool === 'mark' && !h) { d.marks.push({ x: snap(wx), z: snap(wz), kind: 'wind' }); d.route.push({ t: 'm', i: d.marks.length - 1, side: 1 }); ced.sel = { t: 'm', i: d.marks.length - 1 }; cedUI(); return; }
+    if (ced.tool === 'gate' && !h) { d.gates.push({ x: snap(wx), z: snap(wz), w: 70 }); d.route.push({ t: 'g', i: d.gates.length - 1 }); ced.sel = { t: 'g', i: d.gates.length - 1 }; cedUI(); return; }
+    if (ced.tool === 'start' && !h) { const hl = Math.max(40, Math.hypot(d.start.bx - d.start.ax, d.start.bz - d.start.az) / 2); d.start = { ax: snap(wx - hl), az: snap(wz), bx: snap(wx + hl), bz: snap(wz) }; ced.tool = 'select'; cedUI(); return; }
+    if (ced.tool === 'finish' && !h) { d.finish = { ax: snap(wx), az: snap(wz - 45), bx: snap(wx), bz: snap(wz + 45) }; ced.tool = 'select'; cedUI(); return; }
+    if (ced.tool === 'route' && h && (h.t === 'm' || h.t === 'g' || h.t === 'gw')) { d.route.push(h.t === 'm' ? { t: 'm', i: h.i, side: 1 } : { t: 'g', i: h.i }); cedUI(); return; }
+    if (ced.tool === 'del' && h && (h.t === 'm' || h.t === 'g' || h.t === 'gw')) { removeElem(h); cedUI(); return; }
+    if (h) { ced.drag = { h, ox: wx, oz: wz }; ced.sel = h.t === 'm' || h.t === 'g' || h.t === 'gw' ? { t: h.t === 'm' ? 'm' : 'g', i: h.i } : null; }
+    else ced.drag = { pan: true, px, py, cx: ced.view.cx, cz: ced.view.cz };
+    cedUI();
+  });
+  cv.addEventListener('pointermove', (e) => {
+    const r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    if (ced.pointers.has(e.pointerId)) ced.pointers.set(e.pointerId, { x: px, y: py });
+    if (ced.pinch && ced.pointers.size === 2) { const [a, b] = [...ced.pointers.values()]; ced.view.k = clamp(ced.pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / ced.pinch.d, 0.05, 5); drawEditor(); return; }
+    const dr = ced.drag; if (!dr) return;
+    if (dr.pan) { ced.view.cx = dr.cx - (px - dr.px) / ced.view.k; ced.view.cz = dr.cz - (py - dr.py) / ced.view.k; drawEditor(); return; }
+    const [wx, wz] = toWorld(px, py), d = ced.def, h = dr.h, snap = (v) => Math.round(v / 5) * 5;
+    if (h.t === 'm') { d.marks[h.i].x = snap(wx); d.marks[h.i].z = snap(wz); }
+    else if (h.t === 'g') { const g2 = d.gates[h.i]; g2.x = snap(wx); g2.z = snap(wz); }
+    else if (h.t === 'gw') { const g2 = d.gates[h.i]; g2.w = clamp(snap(Math.abs(wx - g2.x) * 2), 20, 300); }
+    else if (h.t === 'sa') { d.start.ax = snap(wx); d.start.az = snap(wz); } else if (h.t === 'sb') { d.start.bx = snap(wx); d.start.bz = snap(wz); }
+    else if (h.t === 'fa') { d.finish.ax = snap(wx); d.finish.az = snap(wz); } else if (h.t === 'fb') { d.finish.bx = snap(wx); d.finish.bz = snap(wz); }
+    cedUI();
+  });
+  const endPtr = (e) => { ced.pointers.delete(e.pointerId); if (ced.pointers.size < 2) ced.pinch = null; if (!ced.pointers.size) ced.drag = null; };
+  cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
+  cv.addEventListener('wheel', (e) => { e.preventDefault(); ced.view.k = clamp(ced.view.k * (1 - e.deltaY * 0.0012), 0.05, 5); drawEditor(); }, { passive: false });
+  document.querySelectorAll('#cedtools button').forEach((b) => (b.onclick = () => { ced.tool = b.dataset.tool; cedUI(); }));
+  $('cedroute').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    const k = +b.dataset.k, R = ced.def.route;
+    if (b.dataset.a === 'side') R[k].side = R[k].side > 0 ? -1 : 1;
+    if (b.dataset.a === 'del') R.splice(k, 1);
+    if (b.dataset.a === 'up' && k > 0) { const t = R[k - 1]; R[k - 1] = R[k]; R[k] = t; }
+    cedUI();
+  });
+  $('cedfin').onclick = () => { const d = ced.def; if (d.finish) d.finish = null; else { const cx = (d.start.ax + d.start.bx) / 2 + 180, cz = (d.start.az + d.start.bz) / 2; d.finish = { ax: cx, az: cz - 45, bx: cx, bz: cz + 45 }; } cedUI(); };
+  $('cedkind').onclick = () => { if (ced.sel && ced.sel.t === 'm') { const m = ced.def.marks[ced.sel.i]; m.kind = m.kind === 'lee' ? 'wind' : 'lee'; cedUI(); } };
+  $('cedzin').onclick = () => { ced.view.k = clamp(ced.view.k * 1.25, 0.05, 5); drawEditor(); };
+  $('cedzout').onclick = () => { ced.view.k = clamp(ced.view.k / 1.25, 0.05, 5); drawEditor(); };
+  $('cedfit').onclick = () => { fitEditor(); drawEditor(); };
+  $('cedtpl').onchange = (e) => {
+    const v = e.target.value; e.target.value = '';
+    if (!v) return;
+    ced.def = v === 'empty' ? emptyDef() : SIM.defFromCourse(v); ced.sel = null; fitEditor(); cedUI();
+    cedMsg('Vorlage geladen – jetzt anpassen', 'good');
+  };
+  function refreshSaved() {
+    const list = savedCourses();
+    $('cedsaved').innerHTML = '<option value="">Gespeicherte Kurse …</option>' + list.map((c, i) => `<option value="${i}">${esc(c.name || 'Kurs ' + (i + 1))}</option>`).join('');
+  }
+  $('cedsave').onclick = () => {
+    const err = SIM.validateDef(ced.def); if (err) { cedMsg(err, 'bad'); return; }
+    const name = ($('cedname').value || '').trim().slice(0, 30) || 'Mein Kurs';
+    const list = savedCourses(), i = list.findIndex((c) => c.name === name);
+    const entry = { name, def: cloneDef(ced.def) };
+    if (i >= 0) list[i] = entry; else list.push(entry);
+    cedMsg(storeCourses(list) ? `„${name}“ gespeichert` : 'Speichern hier nicht möglich – „Code kopieren“ nutzen', storeCourses(list) ? 'good' : 'bad');
+    $('cedname').value = name; refreshSaved();
+  };
+  $('cedsaved').onchange = (e) => {
+    const list = savedCourses(), c = list[+e.target.value]; e.target.value = '';
+    if (!c) return; ced.def = cloneDef(c.def); $('cedname').value = c.name; ced.sel = null; fitEditor(); cedUI(); cedMsg(`„${c.name}“ geladen`, 'good');
+  };
+  $('ceddel').onclick = () => {
+    const name = ($('cedname').value || '').trim(); const list = savedCourses(), i = list.findIndex((c) => c.name === name);
+    if (i < 0) { cedMsg('Kein gespeicherter Kurs mit diesem Namen', 'bad'); return; }
+    list.splice(i, 1); storeCourses(list); refreshSaved(); cedMsg(`„${name}“ gelöscht`, 'good');
+  };
+  $('cedcopy').onclick = () => {
+    const code = encodeDef(ced.def, ($('cedname').value || '').trim());
+    $('cedcode').value = code;
+    navigator.clipboard.writeText(code).then(() => cedMsg('Kurs-Code kopiert – zum Teilen einfügen', 'good'), () => cedMsg('Code steht im Feld – markieren und kopieren', 'good'));
+  };
+  $('cedpaste').onclick = () => {
+    try { const o = decodeDef($('cedcode').value); ced.def = o.d; $('cedname').value = o.n || ''; ced.sel = null; fitEditor(); cedUI(); cedMsg('Kurs aus Code übernommen', 'good'); }
+    catch (e) { cedMsg('Code nicht lesbar', 'bad'); }
+  };
+  $('cedok').onclick = () => closeEditor(true);
+  $('cedcancel').onclick = () => closeEditor(false);
+  $('bced').onclick = openEditor;
+  addEventListener('resize', () => { if (!$('ced').classList.contains('hidden')) drawEditor(); });
+  updateCustomLabel();
 
   // ---------- Hauptschleife ----------
   function resize() {
