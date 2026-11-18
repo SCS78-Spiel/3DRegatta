@@ -290,6 +290,7 @@ body.replaying #specend{display:none}
     <div class="opt"><label>Runden</label><div class="seg" data-key="laps"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
     <div class="opt"><label>KI-Gegner</label><div class="seg" data-key="difficulty"><button data-v="easy">Leicht</button><button data-v="medium">Mittel</button><button data-v="pro">Profi</button></div></div>
     <div class="opt"><label>Segeltrimm</label><div class="seg" data-key="trim"><button data-v="manual">Manuell</button><button data-v="auto">Automatisch</button></div></div>
+    <div class="opt"><label>Grafik</label><div class="seg" data-key="gfx"><button data-v="high">Schön</button><button data-v="low">Schnell</button></div></div>
     <div class="opt"><label>Hilfslinien</label><div class="seg" data-key="help"><button data-v="true">An</button><button data-v="false">Aus</button></div></div>
     <button class="big-btn" id="go">Zum Start</button>
     <button class="big-btn ghost" id="bmp">Mehrspieler (QR-Code)</button>
@@ -1557,6 +1558,80 @@ void main(){
   #include <encodings_fragment>
 }`;
 
+// ---------- Nachbearbeitung (Bloom, Kantenglättung, Farbabstimmung) ----------
+const POST_VS = `
+varying vec2 vUv;
+void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+// helle Bereiche herausfiltern und dabei verkleinern (4-Tap)
+const BRIGHT_FS = `
+uniform sampler2D tDiffuse; uniform vec2 uTexel; uniform float uThr;
+varying vec2 vUv;
+void main(){
+  vec3 c = texture2D(tDiffuse, vUv + uTexel * vec2(-0.5,-0.5)).rgb + texture2D(tDiffuse, vUv + uTexel * vec2(0.5,-0.5)).rgb
+         + texture2D(tDiffuse, vUv + uTexel * vec2(-0.5,0.5)).rgb + texture2D(tDiffuse, vUv + uTexel * vec2(0.5,0.5)).rgb;
+  c *= 0.25;
+  float l = max(c.r, max(c.g, c.b));
+  gl_FragColor = vec4(c * smoothstep(uThr, 1.0, l), 1.0);
+}
+`;
+const BLUR_FS = `
+uniform sampler2D tDiffuse; uniform vec2 uDir;
+varying vec2 vUv;
+void main(){
+  vec3 c = texture2D(tDiffuse, vUv).rgb * 0.227027;
+  c += (texture2D(tDiffuse, vUv + uDir * 1.384615).rgb + texture2D(tDiffuse, vUv - uDir * 1.384615).rgb) * 0.316216;
+  c += (texture2D(tDiffuse, vUv + uDir * 3.230769).rgb + texture2D(tDiffuse, vUv - uDir * 3.230769).rgb) * 0.070270;
+  gl_FragColor = vec4(c, 1.0);
+}
+`;
+const COMP_FS = `
+uniform sampler2D tDiffuse, tBloom, tBloom2; uniform vec2 uTexel; uniform float uBloom, uFxaa, uVig, uSat;
+varying vec2 vUv;
+const vec3 LUM = vec3(0.299, 0.587, 0.114);
+vec3 fxaa(vec2 uv){
+  vec3 nw = texture2D(tDiffuse, uv + vec2(-1.0,-1.0) * uTexel).rgb, ne = texture2D(tDiffuse, uv + vec2(1.0,-1.0) * uTexel).rgb;
+  vec3 sw = texture2D(tDiffuse, uv + vec2(-1.0,1.0) * uTexel).rgb, se = texture2D(tDiffuse, uv + vec2(1.0,1.0) * uTexel).rgb;
+  vec3 m = texture2D(tDiffuse, uv).rgb;
+  float lNW = dot(nw, LUM), lNE = dot(ne, LUM), lSW = dot(sw, LUM), lSE = dot(se, LUM), lM = dot(m, LUM);
+  float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE))), lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
+  vec2 dir = vec2(-((lNW + lNE) - (lSW + lSE)), (lNW + lSW) - (lNE + lSE));
+  float red = max((lNW + lNE + lSW + lSE) * 0.03125, 1.0 / 128.0);
+  float rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + red);
+  dir = clamp(dir * rcp, vec2(-8.0), vec2(8.0)) * uTexel;
+  vec3 a = 0.5 * (texture2D(tDiffuse, uv + dir * (1.0/3.0 - 0.5)).rgb + texture2D(tDiffuse, uv + dir * (2.0/3.0 - 0.5)).rgb);
+  vec3 b = a * 0.5 + 0.25 * (texture2D(tDiffuse, uv - dir * 0.5).rgb + texture2D(tDiffuse, uv + dir * 0.5).rgb);
+  float lb = dot(b, LUM);
+  return (lb < lMin || lb > lMax) ? a : b;
+}
+void main(){
+  vec3 c = uFxaa > 0.5 ? fxaa(vUv) : texture2D(tDiffuse, vUv).rgb;
+  vec3 bl = texture2D(tBloom, vUv).rgb * 0.65 + texture2D(tBloom2, vUv).rgb * 0.55;
+  c = 1.0 - (1.0 - c) * (1.0 - bl * uBloom);          // weiches Überstrahlen (Screen-Blend)
+  float l = dot(c, LUM);
+  c = mix(vec3(l), c, uSat);                          // etwas kräftigere Farben
+  c = mix(c, c * c * (3.0 - 2.0 * c), 0.12);          // leichte S-Kurve (Kontrast)
+  vec2 d = vUv - 0.5; c *= 1.0 - uVig * dot(d, d);    // Vignette
+  c += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0; // Dithering gegen Banding
+  gl_FragColor = vec4(c, 1.0);
+}
+`;
+// Meeresspiegelung für die Umgebungsbeleuchtung (Rümpfe spiegeln unten Wasser statt Himmel)
+const ENVSEA_VS = `
+varying vec3 vDir;
+void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+`;
+const ENVSEA_FS = `
+varying vec3 vDir;
+void main(){
+  vec3 d = normalize(vDir);
+  float k = smoothstep(0.0, 0.25, -d.y);
+  vec3 c = mix(vec3(0.42, 0.55, 0.66), vec3(0.03, 0.12, 0.17), k);
+  gl_FragColor = vec4(c, 1.0);
+  #include <encodings_fragment>
+}
+`;
+
 </script>
 <script>
 /* ===== Regatta 3D – Grafik, Steuerung, Oberfläche ===== */
@@ -1593,8 +1668,12 @@ void main(){
 
   // ---------- Renderer & Szene ----------
   const canvas = $('c');
+  // Grafikqualität: 'high' = mit Nachbearbeitung, 'low' = schnell
+  let GFX = 'high';
+  try { const s0 = JSON.parse(localStorage.getItem('regatta3d') || 'null'); if (s0 && s0.gfx) GFX = s0.gfx; } catch (e) {}
+  const prFor = (q) => Math.min(window.devicePixelRatio || 1, q === 'low' ? 1.25 : isTouch ? 1.75 : 2);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouch ? 1.6 : 2));
+  renderer.setPixelRatio(prFor(GFX));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.92;
@@ -1621,6 +1700,10 @@ void main(){
   {
     const envScene = new THREE.Scene();
     envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), skyMat));
+    // untere Halbkugel = Meer, damit Rumpfseiten das dunkle Wasser spiegeln
+    const seaEnv = new THREE.Mesh(new THREE.SphereGeometry(45, 32, 16, 0, Math.PI * 2, Math.PI / 2 - 0.02, Math.PI / 2 + 0.02),
+      new THREE.ShaderMaterial({ vertexShader: ENVSEA_VS, fragmentShader: ENVSEA_FS, side: THREE.BackSide, depthWrite: false }));
+    envScene.add(seaEnv);
     const pm = new THREE.PMREMGenerator(renderer);
     scene.environment = pm.fromScene(envScene, 0.02, 0.1, 200).texture;
     pm.dispose();
@@ -1848,7 +1931,7 @@ void main(){
       crew: [{ z: 4.6, role: 'pod' }, { z: 3.3, role: 'pod' }, { z: 2.0, role: 'pod' }, { z: 4.1, role: 'pod', lee: true }, { z: 2.6, role: 'pod', lee: true }],
     },
     ac75: {
-      deck: 1.3, hull: { L: 22.86, B: 5.0, sheer: 1.3, rise: 0.1, depth: 0.75, bowW: 0.32, rake: -0.4, trake: 0, camber: 0.03, chine: true, chineY: 0.1 }, hullX: 1.35, look: { style: 'livery', deck: 0x2e3238 },
+      deck: 1.3, hull: { L: 22.86, B: 5.0, sheer: 1.3, rise: 0.1, depth: 0.75, bowW: 0.32, rake: -0.4, trake: 0, camber: 0.05 }, hullX: 1.35, look: { style: 'livery', deck: 0x2e3238 },
       mastZ: -1.2, mastH: 26.5, mastR: 0.32, mastColor: 0x1b1d21, boomY: 0.15, boomless: true,
       main: { luff: 25.5, foot: 7.2, head: 3.2, roach: 0.12, camber: 0.11, tex: 'carbon' },
       jib: { headH: 21, foot: 5.2 }, kite: null, rig: 'std', app: 'ac75', foilZ: -0.6,
@@ -2035,11 +2118,21 @@ void main(){
       const gr = g.createLinearGradient(0, y0, 0, y0 + 256);
       gr.addColorStop(0, 'rgba(255,255,255,0.10)'); gr.addColorStop(wl, 'rgba(0,0,0,0.0)'); gr.addColorStop(1, 'rgba(0,0,0,0.12)');
       g.fillStyle = gr; g.fillRect(0, y0, 1024, 256);
-      // feiner Schmutz-/Wasserrand an der Wasserlinie
-      g.fillStyle = 'rgba(70,60,40,0.10)'; g.fillRect(0, y0 + Math.round(256 * wl) - 1, 1024, 3);
+      // feiner Schmutz-/Wasserrand an der Wasserlinie, leicht verlaufen
+      const wy = y0 + Math.round(256 * wl);
+      const gw = g.createLinearGradient(0, wy - 10, 0, wy + 4);
+      gw.addColorStop(0, 'rgba(90,80,55,0)'); gw.addColorStop(0.75, 'rgba(90,80,55,0.10)'); gw.addColorStop(1, 'rgba(90,80,55,0)');
+      g.fillStyle = gw; g.fillRect(0, wy - 10, 1024, 14);
+      // Gebrauchsspuren: Scheuerstellen am Bug und an der Deckskante, feine Kratzer
+      let sd = 7 + half * 13; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+      for (let k = 0; k < 40; k++) {
+        const f = 0.55 + rnd() * 0.45, x = bx(f), y = y0 + 4 + rnd() * 256 * wl * 0.9, l = 6 + rnd() * 30;
+        g.strokeStyle = lum(color) > 140 && style !== 'carbon' && style !== 'livery' ? `rgba(60,60,60,${0.04 + rnd() * 0.07})` : `rgba(255,255,255,${0.04 + rnd() * 0.07})`;
+        g.lineWidth = 0.6 + rnd(); g.beginPath(); g.moveTo(x, y); g.lineTo(x + (bowRight ? -l : l), y + (rnd() - 0.5) * 3); g.stroke();
+      }
       if (number) {
         const pxX = L / 1024, pxY = arcH / 256, k = pxY / pxX;
-        g.save(); g.translate(bx(0.8), y0 + 256 * wl * (style === 'livery' ? 0.5 : 0.55)); g.scale(k * 0.95, 1);
+        g.save(); g.translate(bx(style === 'livery' ? 0.3 : 0.8), y0 + 256 * wl * (style === 'livery' ? 0.5 : 0.42)); g.scale(k * 0.95, 1);
         g.font = `800 ${style === 'livery' ? 44 : 40}px Inter, Arial, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
         const bg = style === 'stripe' ? color : style === 'carbon' ? 0x111111 : style === 'livery' ? (stripe != null ? stripe : 0xffffff) : color;
         g.fillStyle = lum(bg) > 150 ? '#14213d' : '#f4f4f0';
@@ -2049,13 +2142,61 @@ void main(){
     const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
     return t;
   }
-  // feine Rauheits-Variation (Wassertropfen, Politurspuren) für realistischere Glanzlichter
+  // ---------- Oberflächen-Detailkarten (prozedural, kachelbar) ----------
+  // Normalenkarte aus einer Höhenfunktion h(x,y) im Bereich 0..1 (kachelbar über N)
+  function normalTex(N, hf, strength, rep) {
+    const H = new Float32Array(N * N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) H[y * N + x] = hf(x, y);
+    const cv = document.createElement('canvas'); cv.width = cv.height = N;
+    const g = cv.getContext('2d'), im = g.createImageData(N, N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const hx = H[y * N + ((x + 1) % N)] - H[y * N + ((x - 1 + N) % N)];
+      const hy = H[((y + 1) % N) * N + x] - H[((y - 1 + N) % N) * N + x];
+      let nx = -hx * strength, ny = -hy * strength, nz = 1; const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
+      const o = (y * N + x) * 4; im.data[o] = (nx * 0.5 + 0.5) * 255; im.data[o + 1] = (ny * 0.5 + 0.5) * 255; im.data[o + 2] = (nz * 0.5 + 0.5) * 255; im.data[o + 3] = 255;
+    }
+    g.putImageData(im, 0, 0);
+    const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); t.anisotropy = 4;
+    return t;
+  }
+  // kachelbares Wertrauschen
+  function tileNoise(N, cell, seed) {
+    const G = Math.round(N / cell), v = []; let s = seed; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let k = 0; k < G * G; k++) v.push(r());
+    const sm = (t) => t * t * (3 - 2 * t);
+    return (x, y) => {
+      const fx = x / cell, fy = y / cell, ix = Math.floor(fx), iy = Math.floor(fy), ux = sm(fx - ix), uy = sm(fy - iy);
+      const at = (a, c) => v[((c % G + G) % G) * G + ((a % G + G) % G)];
+      return (at(ix, iy) * (1 - ux) + at(ix + 1, iy) * ux) * (1 - uy) + (at(ix, iy + 1) * (1 - ux) + at(ix + 1, iy + 1) * ux) * uy;
+    };
+  }
+  // „Orangenhaut" des Gelcoats/Lacks: sehr feine Welligkeit, die Spiegelungen leicht verzerrt
+  const peelNormal = (() => {
+    const n1 = tileNoise(256, 8, 3), n2 = tileNoise(256, 32, 9), n3 = tileNoise(256, 128, 21);
+    return normalTex(256, (x, y) => n1(x, y) * 0.5 + n2(x, y) * 0.35 + n3(x, y) * 0.6, 3.0, [10, 3]);
+  })();
+  // Köperbindung (2/2 Twill) des Carbon-Gewebes
+  const weaveNormal = (() => {
+    const N = 64, c = 8;
+    return normalTex(N, (x, y) => {
+      const cx = Math.floor(x / c), cy = Math.floor(y / c), warp = ((cx + cy) >> 1) % 2 === 0;
+      const fx = (x % c) / c, fy = (y % c) / c;
+      return warp ? Math.sin(fx * Math.PI) * 0.9 + 0.1 : Math.sin(fy * Math.PI) * 0.9 + 0.1;
+    }, 2.2, [48, 12]);
+  })();
+  // Rauheit: polierter Lack mit Wassertropfen, Wischspuren und matteren Kratzern
   const glossNoise = (() => {
-    const cv = document.createElement('canvas'); cv.width = cv.height = 256;
-    const g = cv.getContext('2d'); g.fillStyle = 'rgb(70,70,70)'; g.fillRect(0, 0, 256, 256);
+    const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+    const g = cv.getContext('2d'); g.fillStyle = 'rgb(60,60,60)'; g.fillRect(0, 0, 512, 512);
     let s = 5; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-    for (let i = 0; i < 1400; i++) { const v = 40 + r() * 90; g.fillStyle = `rgba(${v},${v},${v},0.5)`; const rr = 1 + r() * 4; g.beginPath(); g.arc(r() * 256, r() * 256, rr, 0, Math.PI * 2); g.fill(); }
-    const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6, 2);
+    // großflächige Politur-Unterschiede
+    for (let i = 0; i < 60; i++) { const v = 45 + r() * 40; g.fillStyle = `rgba(${v},${v},${v},0.25)`; g.beginPath(); g.ellipse(r() * 512, r() * 512, 30 + r() * 80, 10 + r() * 30, r() * 3, 0, Math.PI * 2); g.fill(); }
+    // Wassertropfen (glänzender Rand, matter Kalkfleck)
+    for (let i = 0; i < 900; i++) { const x = r() * 512, y = r() * 512, rr = 0.8 + r() * 3.5; g.fillStyle = 'rgba(25,25,25,0.6)'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(120,120,120,0.35)'; g.lineWidth = 0.7; g.stroke(); }
+    // feine Kratzer / Wischspuren in Längsrichtung
+    g.lineCap = 'round';
+    for (let i = 0; i < 220; i++) { const x = r() * 512, y = r() * 512, l = 10 + r() * 60, a = (r() - 0.5) * 0.25; g.strokeStyle = `rgba(150,150,150,${0.15 + r() * 0.3})`; g.lineWidth = 0.6 + r() * 0.8; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 1.5); t.anisotropy = 4;
     return t;
   })();
   // Rutschfester Decksbelag (feine Körnung) – als Farb- und Bump-Textur
@@ -2068,8 +2209,16 @@ void main(){
     const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
     return t;
   })();
-  const deckMat = (tint) => new THREE.MeshStandardMaterial({ map: nonSkid, bumpMap: nonSkid, bumpScale: 0.004, color: lin(tint || 0xffffff), roughness: 0.85, side: THREE.DoubleSide });
-  const hullMat = (map, carbon) => new THREE.MeshPhysicalMaterial({ map, roughnessMap: glossNoise, vertexColors: true, roughness: carbon ? 0.5 : 0.42, metalness: 0.0, clearcoat: 1, clearcoatRoughness: carbon ? 0.12 : 0.05, envMapIntensity: 1.15, side: THREE.DoubleSide });
+  const deckMat = (tint) => new THREE.MeshStandardMaterial({ map: nonSkid, bumpMap: nonSkid, bumpScale: 0.006, color: lin(tint || 0xffffff), roughness: 0.82, envMapIntensity: 0.8, side: THREE.DoubleSide });
+  // Rumpf: Lack/Gelcoat mit Klarlack-Schicht; Carbon mit sichtbarem Gewebe unter dem Klarlack
+  const hullMat = (map, carbon) => new THREE.MeshPhysicalMaterial({
+    map, roughnessMap: glossNoise, vertexColors: true,
+    normalMap: carbon ? weaveNormal : peelNormal, normalScale: carbon ? new THREE.Vector2(0.35, 0.35) : new THREE.Vector2(0.06, 0.06),
+    roughness: carbon ? 0.55 : 0.5, metalness: 0.0,
+    clearcoat: 1, clearcoatRoughness: carbon ? 0.08 : 0.04,
+    clearcoatNormalMap: peelNormal, clearcoatNormalScale: new THREE.Vector2(0.12, 0.12),
+    envMapIntensity: 1.25, side: THREE.DoubleSide,
+  });
 
   // ---------- Segeltexturen ----------
   function sailTexture(kind, number, numColor, accent, chordAt, luff) {
@@ -3041,12 +3190,13 @@ void main(){
 
   // ---------- Spielzustand ----------
   let world = null, views = [], state = 'menu', paused = false;
-  let settings = { difficulty: 'medium', trim: 'manual', help: true, cls: '470', course: 'ud', laps: '1' };
+  let settings = { difficulty: 'medium', trim: 'manual', help: true, cls: '470', course: 'ud', laps: '1', gfx: 'high' };
   try { const s = JSON.parse(localStorage.getItem('regatta3d') || 'null'); if (s) settings = { ...settings, ...s }; } catch (e) {}
   const input = { left: false, right: false, fine: false, sheet: 0.55 };
   const keys = {};
   let visTime = 0, acc = 0;
   const cam = { mode: 0, yaw: 0, orbit: 0, pitch: 0, dist: 17, lastDrag: -10, pos: new THREE.Vector3(), look: new THREE.Vector3(), base: 17, h: 6, ahead: 6, lookY: 3 };
+  if (/[?&]dev\b/.test(location.search)) window.__R = { cam, get world() { return world; } };
   function setCamDims(cls) {
     const S = SPECS[cls], L = S.hull.L;
     cam.base = cam.dist = clamp(5 + L * 1.9, 8, 48);
@@ -3184,6 +3334,7 @@ void main(){
     seg.querySelectorAll('button').forEach((b) => (b.onclick = () => {
       settings[key] = b.dataset.v === 'true' ? true : b.dataset.v === 'false' ? false : b.dataset.v; save(); set();
       if (key === 'cls' && state === 'menu') resetMenuScene();
+      if (key === 'gfx') setGfx(settings.gfx);
       if (key === 'course') { if (settings.course === 'custom' && !settings.customDef) openEditor(); updateCustomLabel(); }
     }));
     set();
@@ -3366,6 +3517,7 @@ void main(){
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
     g.translate(W / 2, H / 2); g.scale(d, d);
     const R = Math.min(W, H) / d / 2 - 6;
+    if (!(R > 2)) return;
     const opt = optAngles(p.tws, world.cls);
     g.lineWidth = 1.5; g.strokeStyle = 'rgba(255,255,255,0.25)'; g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2); g.stroke();
     // Wind relativ zum Bug (oben = Bug)
@@ -4367,6 +4519,59 @@ void main(){
   addEventListener('resize', () => { if (!$('ced').classList.contains('hidden')) drawEditor(); });
   updateCustomLabel();
 
+  // ---------- Nachbearbeitung: Kantenglättung (MSAA/FXAA), Bloom, Farbabstimmung ----------
+  const Post = (() => {
+    const gl2 = !!(renderer.capabilities && renderer.capabilities.isWebGL2);
+    const opt = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, depthBuffer: false, stencilBuffer: false };
+    const useMS = gl2 && !!THREE.WebGLMultisampleRenderTarget;
+    const main = useMS ? new THREE.WebGLMultisampleRenderTarget(1, 1, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat })
+                       : new THREE.WebGLRenderTarget(1, 1, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat });
+    if (useMS) main.samples = isTouch ? 2 : 4;
+    main.texture.encoding = THREE.sRGBEncoding;
+    const rt = () => { const t = new THREE.WebGLRenderTarget(1, 1, opt); t.texture.generateMipmaps = false; return t; };
+    const a1 = rt(), b1 = rt(), a2 = rt(), b2 = rt();
+    const mat = (fs, u) => new THREE.ShaderMaterial({ uniforms: u, vertexShader: POST_VS, fragmentShader: fs, depthTest: false, depthWrite: false, toneMapped: false });
+    const mBright = mat(BRIGHT_FS, { tDiffuse: { value: null }, uTexel: { value: new THREE.Vector2() }, uThr: { value: 0.93 } });
+    const mBlur = mat(BLUR_FS, { tDiffuse: { value: null }, uDir: { value: new THREE.Vector2() } });
+    const mComp = mat(COMP_FS, { tDiffuse: { value: main.texture }, tBloom: { value: a1.texture }, tBloom2: { value: a2.texture }, uTexel: { value: new THREE.Vector2() },
+      uBloom: { value: 0.28 }, uFxaa: { value: useMS ? 0 : 1 }, uVig: { value: 0.35 }, uSat: { value: 1.07 } });
+    const pScene = new THREE.Scene(), pCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mComp); quad.frustumCulled = false; pScene.add(quad);
+    const pass = (m, target) => { quad.material = m; renderer.setRenderTarget(target); renderer.render(pScene, pCam); };
+    const sz = new THREE.Vector2(); let W = 0, H = 0, broken = false;
+    function size() {
+      renderer.getDrawingBufferSize(sz); const w = Math.max(1, Math.floor(sz.x)), h = Math.max(1, Math.floor(sz.y));
+      if (w === W && h === H) return; W = w; H = h;
+      main.setSize(w, h);
+      const w1 = Math.max(1, w >> 2), h1 = Math.max(1, h >> 2), w2 = Math.max(1, w >> 3), h2 = Math.max(1, h >> 3);
+      a1.setSize(w1, h1); b1.setSize(w1, h1); a2.setSize(w2, h2); b2.setSize(w2, h2);
+      mComp.uniforms.uTexel.value.set(1 / w, 1 / h);
+    }
+    function blur(a, b, w, h) {
+      mBlur.uniforms.tDiffuse.value = a.texture; mBlur.uniforms.uDir.value.set(1 / w, 0); pass(mBlur, b);
+      mBlur.uniforms.tDiffuse.value = b.texture; mBlur.uniforms.uDir.value.set(0, 1 / h); pass(mBlur, a);
+    }
+    function render(scene, cam) {
+      if (GFX === 'low' || broken) { renderer.setRenderTarget(null); renderer.render(scene, cam); return; }
+      try {
+        size();
+        renderer.setRenderTarget(main); renderer.render(scene, cam);
+        mBright.uniforms.tDiffuse.value = main.texture; mBright.uniforms.uTexel.value.set(1 / W, 1 / H); mBright.uniforms.uThr.value = 0.93; pass(mBright, a1);
+        blur(a1, b1, a1.width, a1.height);
+        mBright.uniforms.tDiffuse.value = a1.texture; mBright.uniforms.uTexel.value.set(1 / a1.width, 1 / a1.height); mBright.uniforms.uThr.value = 0.0; pass(mBright, a2);
+        blur(a2, b2, a2.width, a2.height); blur(a2, b2, a2.width, a2.height);
+        pass(mComp, null);
+      } catch (e) { console.warn('Post aus', e); broken = true; renderer.setRenderTarget(null); renderer.render(scene, cam); }
+    }
+    return { render };
+  })();
+  function setGfx(q) {
+    GFX = q; renderer.setPixelRatio(prFor(q));
+    const ms = q === 'low' || isTouch ? 1024 : 2048;
+    if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+    resize();
+  }
+
   // ---------- Hauptschleife ----------
   function resize() {
     const w = innerWidth, h = innerHeight;
@@ -4470,7 +4675,7 @@ void main(){
     const fp = isSpectating() ? (spec.follow >= 0 ? world.boats[spec.follow] : { x: specB.cx, z: specB.cz }) : state === 'race' ? world.player : (views[2] ? views[2].b : { x: 0, z: 0 });
     sun.position.set(fp.x + sunDir.x * 80, sunDir.y * 80, fp.z + sunDir.z * 80);
     sun.target.position.set(fp.x, 0, fp.z);
-    renderer.render(scene, camera);
+    Post.render(scene, camera);
   }
   $('bhelp').classList.toggle('off', !settings.help);
   requestAnimationFrame(frame);
