@@ -18,6 +18,11 @@ Ein 3D-Segelspiel im Browser. Bis zu 12 Leute segeln live gegeneinander; der Hos
    (oder Seite öffnen → Mehrspieler → Code eingeben).
 4. Sind alle in der Liste, startet der Host mit **Rennen starten**. Freie Plätze bis 6 Boote füllen KI-Boote auf (abschaltbar).
 
+## America's Cup
+
+- Bootsklasse **AC75** (foilender 75-Fuß-Einrumpfer mit schwenkbaren Foil-Armen, 8 Crew) und Kurs **„Am. Cup“**.
+- Match Race 1 gegen 1: Start, Luvtor, Leetor, Zieleinlauf vor dem Wind; rote Linien sind die Bahnbegrenzung – überfahren kostet 8 Sekunden gebremste Fahrt.
+
 ## Eigene Kurse bauen
 
 - Im Hauptmenü **✎ Kurs bauen**: Tonnen, Tore, Startlinie und (optional) eine eigene Ziellinie auf die Karte setzen und verschieben, Reihenfolge und Rundungsseite (Bb rot / Stb grün) in der Route festlegen.

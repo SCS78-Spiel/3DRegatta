@@ -77,16 +77,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b1e33;font-family:In
 body.touch #steer{display:flex}
 body.touch #keys{display:none}
 .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:radial-gradient(ellipse at center,rgba(5,15,30,.35),rgba(5,15,30,.75));overflow:auto}
-.card{width:min(520px,100%);padding:26px 26px 22px;border-radius:22px;background:rgba(8,20,36,.66);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.45);max-height:100%;overflow:auto}
+.card{width:min(540px,100%);overflow-x:hidden;padding:26px 26px 22px;border-radius:22px;background:rgba(8,20,36,.66);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.45);max-height:100%;overflow:auto}
 .card h1{margin:0;font-size:44px;font-weight:800;letter-spacing:-1.5px;line-height:1}
 .card h1 span{color:var(--acc)}
 .card .sub{opacity:.75;margin:8px 0 18px;font-size:14.5px;line-height:1.5}
-.opt{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;margin:10px 0;flex-wrap:wrap}
 .opt label{font-size:14px;font-weight:600;opacity:.9}
-.seg{display:flex;background:rgba(255,255,255,.08);border-radius:11px;padding:3px}
+.seg{display:flex;flex-wrap:wrap;background:rgba(255,255,255,.08);border-radius:11px;padding:3px}
 .seg button{border:0;background:transparent;color:#fff;font-family:inherit;font-weight:600;font-size:13px;padding:8px 12px;border-radius:9px;cursor:pointer;opacity:.7}
 .seg button.sel{background:#fff;color:#0b1e33;opacity:1}
-.clsgrid{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px!important;margin:4px 0 12px}
+.clsgrid{display:grid!important;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px!important;margin:4px 0 12px}
 .clsgrid button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 10px!important;text-align:left;border-radius:10px!important}
 .clsgrid button b{font-size:15px;font-weight:800}
 .clsgrid button span{font-size:11px;font-weight:500;opacity:.75}
@@ -274,7 +274,7 @@ body.replaying #specend{display:none}
 <div id="menu" class="overlay">
   <div class="card">
     <h1>Regatta<span>3D</span></h1>
-    <p class="sub">Regatta gegen 5 KI-Boote deiner Klasse auf vier Kurslayouts. Echte Kurse zum Wind, Trimm, Dreher, Böen, Foilen und Wegerecht.</p>
+    <p class="sub">Regatta gegen KI-Boote deiner Klasse – vom Opti bis zum America's Cup. Echte Kurse zum Wind, Trimm, Dreher, Böen, Foilen und Wegerecht.</p>
     <div class="clsgrid seg" data-key="cls">
       <button data-v="opti"><b>Opti</b><span>Einhand · Jugend</span></button>
       <button data-v="470"><b>470er</b><span>Trapez · Spi</span></button>
@@ -282,9 +282,10 @@ body.replaying #specend{display:none}
       <button data-v="moth"><b>Moth</b><span>Foil · Einhand</span></button>
       <button data-v="nacra"><b>Nacra 17</b><span>Foil-Kat · Trapez</span></button>
       <button data-v="f50"><b>F50</b><span>SailGP-Foilkat</span></button>
+      <button data-v="ac75"><b>AC75</b><span>America's Cup</span></button>
       <button data-v="imoca"><b>IMOCA 60</b><span>Hochsee · Foils</span></button>
     </div>
-    <div class="opt"><label>Kurs</label><div class="seg" data-key="course"><button data-v="ud">Up&amp;Down</button><button data-v="tri">Dreieck</button><button data-v="inner">Innerloop</button><button data-v="sailgp">SailGP</button><button data-v="custom">Eigener</button></div></div>
+    <div class="opt"><label>Kurs</label><div class="seg" data-key="course"><button data-v="ud">Up&amp;Down</button><button data-v="tri">Dreieck</button><button data-v="inner">Innerloop</button><button data-v="sailgp">SailGP</button><button data-v="ac">Am. Cup</button><button data-v="custom">Eigener</button></div></div>
     <div class="menurow" style="margin-top:2px"><button class="mini" id="bced">✎ Kurs bauen</button><span class="hint" id="customname" style="margin:0"></span></div>
     <div class="opt"><label>Runden</label><div class="seg" data-key="laps"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
     <div class="opt"><label>KI-Gegner</label><div class="seg" data-key="difficulty"><button data-v="easy">Leicht</button><button data-v="medium">Mittel</button><button data-v="pro">Profi</button></div></div>
@@ -297,7 +298,7 @@ body.replaying #specend{display:none}
       <summary>So wird gesegelt</summary>
       <ul>
         <li><b>Startphase (1 min):</b> Bei Startsignal hinter der Linie zwischen Startschiff und Tonne sein, dann mit Fahrt drüber. Frühstart → zurück unter die Linie.</li>
-        <li><b>Kurse:</b> <i>Up&amp;Down</i>: Luvtonne an Backbord, unten durchs Leetor (zwischen den gelben Tonnen), Ziel gegen den Wind an der Startlinie. <i>Dreieck</i>: Luv – Raumtonne – Lee, alle an Backbord. <i>Innerloop</i>: Tonne 1, Ablauftonne 2, Leetor 3, Zieleinlauf auf Raumkurs (blaue Tonnen). <i>SailGP</i>: Raumschots-Start von der Seite, Tonne 1 an Steuerbord, dann Lee- und Luvtore, Zieleinlauf auf Raumkurs. Die Statuszeile oben zeigt immer das nächste Ziel und die Rundungsseite; die orange Markierung im Bild zeigt, wo es hingeht.</li>
+        <li><b>Kurse:</b> <i>Up&amp;Down</i>: Luvtonne an Backbord, unten durchs Leetor (zwischen den gelben Tonnen), Ziel gegen den Wind an der Startlinie. <i>Dreieck</i>: Luv – Raumtonne – Lee, alle an Backbord. <i>Innerloop</i>: Tonne 1, Ablauftonne 2, Leetor 3, Zieleinlauf auf Raumkurs (blaue Tonnen). <i>America's Cup</i>: Match Race 1 gegen 1 – Start, Luvtor, Leetor, Zieleinlauf vor dem Wind; rote Linien = Bahnbegrenzung (überfahren = 8 s Strafe). <i>SailGP</i>: Raumschots-Start von der Seite, Tonne 1 an Steuerbord, dann Lee- und Luvtore, Zieleinlauf auf Raumkurs. Die Statuszeile oben zeigt immer das nächste Ziel und die Rundungsseite; die orange Markierung im Bild zeigt, wo es hingeht.</li>
         <li><b>Gegen den Wind</b> kannst du nicht direkt – ca. 45° zum Wind kreuzen (grüne Marken auf der Windrose). Laylines zeigen, wann du die Tonne anliegst.</li>
         <li><b>Trimm:</b> Großschot so weit fieren, bis das Segel gerade nicht killt. Luv-Faden hebt sich = dichter holen, Lee-Faden hängt = fieren.</li>
         <li><b>Dreher:</b> Header (Wind dreht gegen dich) → wenden. Dunkle Flecken auf dem Wasser sind Böen.</li>
@@ -325,7 +326,7 @@ body.replaying #specend{display:none}
       <div class="hint" id="mpsummary"></div>
       <div class="hint"><b id="mpcount"></b></div>
       <ul id="mphostlist" class="plist"></ul>
-      <label class="chk"><input type="checkbox" id="mpfill" checked> Mit KI-Booten auf 6 Boote auffüllen</label>
+      <label class="chk"><input type="checkbox" id="mpfill" checked> Mit KI-Booten auffüllen (auf 6 Boote, beim America's-Cup-Kurs auf 2)</label>
       <label class="chk"><input type="checkbox" id="mpspec"> Ich segle nicht mit – Regattaleitung: Totale + Aufzeichnung zur Analyse</label>
       <button class="big-btn" id="mpgo">Rennen starten</button>
     </div>
@@ -434,6 +435,8 @@ const SIM = (() => {
              polar: [0, 0.9, 6.5, 11.0, 13.0, 14.0, 16.0, 19.5, 22.0, 23.5, 22.5, 20.0, 16.5, 12.0, 10.0] },
     f50:   { name: 'F50', cap: { thr: 38, rec: 25 },  L: 15.0, B: 8.8, crew: 5, course: 3.0, turn: 24, tauUp: 5.0, tauDn: 4.0, heel: 0.15, foil: { v: 17, h: 1.6, keep: 3.4, drop: 0.55 }, kite: null, cat: true,
              polar: [0, 2.0, 12.0, 22.0, 27.0, 29.0, 32.0, 38.0, 42.0, 44.0, 44.0, 41.0, 37.0, 30.0, 25.0] },
+    ac75:  { name: 'AC75', cap: { thr: 40, rec: 30 }, L: 22.86, B: 5.0, crew: 8, course: 4.4, turn: 20, tauUp: 6.0, tauDn: 4.5, heel: 0.15, foil: { v: 18, h: 1.5, keep: 3.6, drop: 0.55 }, kite: null,
+             polar: [0, 3.0, 18.0, 26.0, 30.0, 32.0, 35.0, 40.0, 44.0, 46.0, 46.0, 43.0, 38.0, 30.0, 24.0] },
     imoca: { name: 'IMOCA 60', cap: null, broach: 44,  L: 18.3, B: 5.85, crew: 1, course: 1.6, turn: 18, tauUp: 6, tauDn: 4.5, heel: 0.5, foil: { v: 14, h: 0.6, partial: true }, kite: 'asym',
              polar: [0, 1.0, 6.0, 9.0, 10.5, 11.5, 13.0, 16.5, 20.0, 22.5, 22.0, 20.0, 17.5, 13.0, 11.5] },
   };
@@ -444,6 +447,7 @@ const SIM = (() => {
     tri: { name: 'Dreieck' },
     inner: { name: 'Innerloop' },
     sailgp: { name: 'SailGP' },
+    ac: { name: "America's Cup" },
     custom: { name: 'Eigener Kurs' },
   };
   // Eigener Kurs: def = { start:{ax,az,bx,bz}, finish:null|{ax,az,bx,bz}, marks:[{x,z,kind}], gates:[{x,z,w}], route:[{t:'m',i,side}|{t:'g',i}] } (Grundeinheiten)
@@ -463,7 +467,7 @@ const SIM = (() => {
     const P = (x, z) => ({ x: x * s, z: z * s });
     const marks = [];
     const mk = (id, x, z, kind, name) => { const m = { id, ...P(x, z), r: kind === 'small' ? 0.8 : 1.15, kind, name }; marks.push(m); return m; };
-    let start, finish, route = [];
+    let start, finish, route = [], bounds = null, match = false;
     const stdStart = () => {
       const pin = mk('PIN', -95, 0, 'small', 'Pin'), cb = mk('CB', 95, 0, 'cb', 'Startschiff');
       return { a: pin, b: cb, n: { x: 0, z: -1 } };
@@ -490,6 +494,17 @@ const SIM = (() => {
       for (let i = 0; i < laps; i++) route.push({ t: 'gate', a: W1, b: W2, name: 'Luvtor' }, { t: 'gate', a: L1, b: L2, name: 'Leetor' });
       const FA = mk('FA', 170, 95, 'fin', 'Ziel'), FB = mk('FB', 170, 185, 'fin', 'Ziel');
       finish = { a: FA, b: FB, name: 'Ziel (Raum)' };
+    } else if (type === 'ac') {
+      // America's Cup: Start, Luv- und Leetore, Zieleinlauf vor dem Wind; seitliche Bahnbegrenzung
+      const pin = mk('PIN', -80, 0, 'small', 'Pin'), cb = mk('CB', 80, 0, 'cb', 'Startschiff');
+      start = { a: pin, b: cb, n: { x: 0, z: -1 } };
+      const W1 = mk('WGs', -42, -430, 'wind', 'Luvtor'), W2 = mk('WGp', 42, -430, 'wind', 'Luvtor');
+      const L1 = mk('LGs', -42, 150, 'lee', 'Leetor'), L2 = mk('LGp', 42, 150, 'lee', 'Leetor');
+      for (let i = 0; i < laps; i++) route.push({ t: 'gate', a: W1, b: W2, name: 'Luvtor' }, { t: 'gate', a: L1, b: L2, name: 'Leetor' });
+      const FA = mk('FA', -55, 235, 'fin', 'Ziel'), FB = mk('FB', 55, 235, 'fin', 'Ziel');
+      finish = { a: FA, b: FB, name: 'Ziel (vor dem Wind)' };
+      bounds = { x0: -210 * s, x1: 210 * s };
+      match = true;
     } else if (type === 'custom') {
       const D = def;
       const pin = mk('PIN', D.start.ax, D.start.az, 'small', 'Pin'), cb = mk('CB', D.start.bx, D.start.bz, 'cb', 'Startschiff');
@@ -553,7 +568,7 @@ const SIM = (() => {
     // Normale der Ziellinie in Fahrtrichtung
     { let nx = -finish.uz, nz = finish.ux; if ((finish.cx - lastP.x) * nx + (finish.cz - lastP.z) * nz < 0) { nx = -nx; nz = -nz; } finish.n = { x: nx, z: nz }; }
     const cb = marks.find((m) => m.kind === 'cb');
-    return { type, laps, marks, start, finish, route, cb };
+    return { type, laps, marks, start, finish, route, cb, bounds, match };
   }
 
   function polar(tws, twaDeg, cls) {
@@ -651,6 +666,7 @@ const SIM = (() => {
       b.pinch = sk.pinch * (r() * 1.4 - 0.2);
       b.shiftThr = sk.shiftThr * (0.8 + r() * 0.4);
       b.boundary = sk.boundary * (0.75 + r() * 0.5) * s;
+      if (this.course.bounds) b.boundary = Math.min(b.boundary, (this.course.bounds.x1 - this.course.bounds.x0) / 2 - Math.max(30 * this.k, this.cls.L * 5));
     }
     newPuff(initial) {
       const r = this.rngW, s = this.s, B = this.box;
@@ -1058,6 +1074,7 @@ const SIM = (() => {
         }
         b.fly += ((b.foiling ? 1 : 0) - b.fly) * Math.min(1, dt * 1.6);
       }
+      if (b.slowT > 0) { b.slowT -= dt; target *= 0.55; }
       b.v += (target - b.v) * dt / (target > b.v ? C.tauUp : tauDn);
       b.v -= rudDrag * b.v * dt;
       if (b.v < 0) b.v = 0;
@@ -1218,6 +1235,11 @@ const SIM = (() => {
           if (Math.abs(along) <= st.len / 2) { b.leg = 1; b.startT = t; this.events.push({ type: 'started', boat: b }); }
         }
         return;
+      }
+      if (C.bounds && !b.capsized) {
+        const B2 = C.bounds, out = b.x < B2.x0 || b.x > B2.x1;
+        if (out && !b.outB) { b.outB = true; b.slowT = 8; this.events.push({ type: 'boundary', boat: b }); }
+        else if (!out && b.x > B2.x0 + 5 && b.x < B2.x1 - 5) b.outB = false;
       }
       if (b.leg <= R.length) {
         const st = R[b.leg - 1];
@@ -1825,6 +1847,14 @@ void main(){
       wingSail: { h: 23, c0: 4.4, c1: 1.3 }, jib: { headH: 16.5, foot: 4.0 }, kite: null, rig: 'f50', app: 'f50', foilZ: -1.2,
       crew: [{ z: 4.6, role: 'pod' }, { z: 3.3, role: 'pod' }, { z: 2.0, role: 'pod' }, { z: 4.1, role: 'pod', lee: true }, { z: 2.6, role: 'pod', lee: true }],
     },
+    ac75: {
+      deck: 1.3, hull: { L: 22.86, B: 5.0, sheer: 1.3, rise: 0.25, depth: 0.75, bowW: 0.32, rake: 0.6, camber: 0.04 }, hullX: 1.35,
+      mastZ: -1.2, mastH: 26.5, mastR: 0.32, mastColor: 0x1b1d21, boomY: 0.15, boomless: true,
+      main: { luff: 25.5, foot: 7.2, head: 3.2, roach: 0.12, camber: 0.11, tex: 'carbon' },
+      jib: { headH: 21, foot: 5.2 }, kite: null, rig: 'std', app: 'ac75', foilZ: -0.6,
+      crew: [{ z: 9.2, role: 'pod' }, { z: 9.2, role: 'pod', lee: true }, { z: 7.2, role: 'pod' }, { z: 7.2, role: 'pod', lee: true },
+             { z: 4.6, role: 'pod' }, { z: 4.6, role: 'pod', lee: true }, { z: 3.0, role: 'pod' }, { z: 3.0, role: 'pod', lee: true }],
+    },
     imoca: {
       deck: 1.55, hull: { L: 18.3, B: 5.85, sheer: 1.55, rise: 0.65, depth: 0.95, bowW: 0.3 },
       mastZ: -1.4, mastH: 29, mastR: 0.26, mastColor: 0x1b1d21, boomY: 2.6,
@@ -2229,7 +2259,7 @@ void main(){
       const hull = makeHull(H, b.color, { cockpit: S.cockpit });
       this.halfW = hull.halfW;
       const arcH = (H.sheer + H.depth) * 1.25;
-      const hm = hullMat(hullTexture(b.color, b.stripe, S.app === 'f50' || S.app === 'imoca' ? b.name.toUpperCase().slice(0, 10) : b.sailNo, L, arcH));
+      const hm = hullMat(hullTexture(b.color, b.stripe, S.app === 'f50' || S.app === 'imoca' || S.app === 'ac75' ? b.name.toUpperCase().slice(0, 10) : b.sailNo, L, arcH));
       const dmat = deckMat(S.app === 'imoca' ? 0x9aa0a6 : S.app === 'f50' ? 0x6a7078 : 0xffffff);
       const railMat = std(S.app === 'opti' ? 0x9c6b3c : 0x2b2f35, 0.5, 0.1);
       const innerMat = new THREE.MeshStandardMaterial({ color: lin(0xdcd9d0), roughness: 0.7, side: THREE.DoubleSide });
@@ -2311,6 +2341,23 @@ void main(){
           const rs = box(0.1, 2.8, 0.45, blk, 0.3); rs.position.set(s * x, -1.2, L / 2 - 0.3); this.rudderM.add(rs);
           const rw = foilPlate(1.6, 0.35, 0.07, blk); rw.position.set(s * x, -2.55, L / 2 - 0.3); this.rudderM.add(rw);
         }
+      } else if (S.app === 'ac75') {
+        // Cockpit-Rinne mit Crew-Pods, schwenkbare Foil-Arme mit T-Flügeln, T-Ruder
+        const trench = box(2.0, 0.08, 9.5, 0x2b2f35, 0.7); trench.position.set(0, deckY - 0.55, 5.4); this.tilt.add(trench);
+        for (const s of [1, -1]) { const pod = box(0.9, 0.6, 8.0, 0x3a3f47, 0.6); pod.position.set(s * S.hullX, deckY - 0.3, 5.8); this.tilt.add(pod); }
+        this.arms = [];
+        for (const s of [1, -1]) {
+          const pv = new THREE.Group(); pv.position.set(s * H.B * 0.45, 0.25, S.foilZ); pv.userData.s = s; this.tilt.add(pv);
+          const arm = box(0.28, 4.8, 0.7, blk, 0.35); arm.position.y = -2.4; pv.add(arm);
+          const bulb = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), std(blk, 0.35, 0.3)); bulb.scale.set(0.35, 0.35, 1.6); bulb.position.y = -4.8; pv.add(bulb);
+          const wing = foilPlate(4.4, 0.75, 0.14, blk); wing.position.y = -4.85; pv.add(wing);
+          for (const t of [1, -1]) { const tip = foilPlate(0.12, 0.55, 0.5, blk); tip.position.set(t * 2.15, -4.7, 0); tip.rotation.z = t * 0.6; pv.add(tip); }
+          pv.rotation.z = s * 0.12; this.arms.push(pv);
+        }
+        this.rudderM = new THREE.Group(); this.rudderM.position.set(0, 0, L / 2 - 0.4); this.tilt.add(this.rudderM);
+        const rs = box(0.14, 3.6, 0.7, blk, 0.35); rs.position.y = -1.6; this.rudderM.add(rs);
+        const rw = foilPlate(2.4, 0.5, 0.1, blk); rw.position.y = -3.4; this.rudderM.add(rw);
+        const fair = box(1.4, 0.35, 3.0, 0xdedfe2, 0.4); fair.position.set(0, deckY + 0.05, -3.2); this.tilt.add(fair);
       } else if (S.app === 'imoca') {
         const cab = box(H.B * 0.42, 0.75, 5.2, 0xdedfe2, 0.4); cab.position.set(0, deckY + 0.3, -0.6); this.tilt.add(cab);
         const win = box(H.B * 0.43, 0.25, 4.6, 0x0d1520, 0.1, 0.5); win.position.set(0, deckY + 0.45, -0.6); this.tilt.add(win);
@@ -2337,7 +2384,7 @@ void main(){
       }
       if (S.kite && S.kite.sprit && S.app !== 'nacra' && S.app !== 'imoca') this.tilt.add(between([0, deckY + 0.05, -L / 2 + 0.6], [0, deckY + 0.12, -L / 2 - S.kite.sprit], 0.025, 0x1c1f24, 0.3, 0.6));
       // Pinne
-      if (S.app !== 'imoca' && S.app !== 'nacra' && S.app !== 'f50') {
+      if (S.app !== 'imoca' && S.app !== 'nacra' && S.app !== 'f50' && S.app !== 'ac75') {
         this.tiller = new THREE.Group(); this.tiller.position.set(0, deckY + 0.12, L / 2 + (S.app === 'moth' ? 0.5 : 0.05)); this.tilt.add(this.tiller);
         const tl = Math.min(1.1, L * 0.25);
         const tm = between([0, 0, 0], [0, 0.05, -tl], 0.02, S.app === 'opti' ? wood : 0x2b2f35, 0.5, 0.2); this.tiller.add(tm);
@@ -2384,7 +2431,7 @@ void main(){
       this.boomPivot = new THREE.Group(); this.boomPivot.position.set(0, deckY + S.boomY, mz); this.tilt.add(this.boomPivot);
       if (S.wingSail) this.buildWing(b);
       else {
-      const boom = tube(S.mastR * 0.9, S.mastR * 0.7, M.foot * 1.04, S.mastColor, 0.3, 0.5); boom.rotation.x = Math.PI / 2; boom.position.z = M.foot * 0.52; this.boomPivot.add(boom);
+      if (!S.boomless) { const boom = tube(S.mastR * 0.9, S.mastR * 0.7, M.foot * 1.04, S.mastColor, 0.3, 0.5); boom.rotation.x = Math.PI / 2; boom.position.z = M.foot * 0.52; this.boomPivot.add(boom); }
       this.chordAt = (v) => M.foot + (M.head - M.foot) * Math.pow(v, 0.95) + M.roach * M.foot * Math.sin(Math.PI * v) * 0.55;
       this.mainGeo = sailGrid(12, 18);
       const mainTex = sailTexture(M.tex, b.sailNo, b.numColor || '#14213d', HEX(b.color), this.chordAt, M.luff);
@@ -2392,8 +2439,8 @@ void main(){
       this.boomPivot.add(main);
       if (M.peakRise) { this.sprit = wire([[0, 0, 0], [0, 1, 0]], 0x6b4a2b, 1); this.boomPivot.add(this.sprit); }
       // Großschot & Baumniederholer (laufendes Gut)
-      this.vangLine = wire([[0, 0, 0], [0, 1, 0]], 0x2b2b2b, 0.95); this.tilt.add(this.vangLine);
-      this.mainSheet = wire([[0, 0, 0], [0, 1, 0], [0, 2, 0]], 0x1d3557, 0.95); this.tilt.add(this.mainSheet);
+      this.vangLine = wire([[0, 0, 0], [0, 1, 0]], 0x2b2b2b, 0.95); this.tilt.add(this.vangLine); this.vangLine.visible = !S.boomless;
+      this.mainSheet = wire([[0, 0, 0], [0, 1, 0], [0, 2, 0]], 0x1d3557, 0.95); this.tilt.add(this.mainSheet); this.mainSheet.visible = !S.boomless;
       }
       // Fock
       if (S.jib) {
@@ -2724,6 +2771,15 @@ void main(){
       if (this.tiller) this.tiller.rotation.y = this.key === 'nacra' ? 0 : b.rudder * 0.45;
       this.windex.rotation.y = -(b.awaS || 0);
       if (this.keel) { this.keelAng += (-hs2 * 0.6 - this.keelAng) * Math.min(1, dt); this.keel.rotation.z = this.keelAng; }
+      if (this.arms) {
+        // Leeseitiger Arm unten im Wasser, Luvarm hochgeklappt (bei wenig Fahrt beide unten)
+        const both = (b.v || 0) < SIM.CLASSES[this.key].foil.v * 0.6 || (b.capAmt || 0) > 0.2;
+        for (const a of this.arms) {
+          const s = a.userData.s, lee = s === -hs2;
+          const tgt = lee || both ? s * 0.12 : s * (Math.PI / 2 + 0.35);
+          a.rotation.z += (tgt - a.rotation.z) * Math.min(1, dt * 1.2);
+        }
+      }
       if (this.foils) for (const f of this.foils) { const lee = f.userData.s === -hs2 ? 1 : 0; f.position.y += ((lee ? 0 : 2.8) - f.position.y) * Math.min(1, dt); }
       if (S.wingSail) this.updateWing(); else this.updateMain(time);
       if (this.jibGeo) this.updateJib(time);
@@ -2813,6 +2869,13 @@ void main(){
     const st = course.start, fi = course.finish;
     setLine(startLine, st.a, st.b, st.b.kind === 'cb' ? 1.5 : 0);
     setLine(finishLine, fi.a, fi.b, fi.b.kind === 'cb' ? 1.5 : 0);
+    const bd = course.bounds;
+    boundLines.forEach((l, i) => {
+      l.userData.on = !!bd;
+      if (!bd) { l.visible = false; return; }
+      const zs = course.marks.map((mm) => mm.z), z0 = Math.min(...zs) - 200, z1 = Math.max(...zs) + 150, x = i ? bd.x1 : bd.x0;
+      setLine(l, { x, z: z0 }, { x, z: z1 }, 0);
+    });
   }
   {
     // Inseln am Horizont
@@ -2835,6 +2898,7 @@ void main(){
   const dashMat = (color, op) => new THREE.LineDashedMaterial({ color, dashSize: 4, gapSize: 3, transparent: true, opacity: op, depthWrite: false });
   const mkLine = (col, op) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1, 0, 0)]), dashMat(col, op)); scene.add(l); return l; };
   const startLine = mkLine(0xffffff, 0.85), finishLine = mkLine(0x8ec5ff, 0.9), gateLine = mkLine(0xffe08a, 0.7);
+  const boundLines = [mkLine(0xff4d4d, 0.8), mkLine(0xff4d4d, 0.8)];
   function setLine(l, a, b, trimB) {
     const dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz) || 1;
     const p = l.geometry.attributes.position;
@@ -2858,9 +2922,10 @@ void main(){
     moth: ['GER 4711', 'GER 4212', 'AUS 4431', 'ITA 4404', 'GBR 4558', 'SUI 4588'],
     nacra: ['GER 17', 'GER 12', 'ITA 31', 'NED 4', 'AUS 58', 'GBR 88'],
     f50: ['GER', 'GBR', 'AUS', 'NZL', 'ESP', 'FRA'],
+    ac75: ['GER', 'NZL', 'GBR', 'ITA', 'USA', 'SUI'],
     imoca: ['GER 7', 'FRA 12', 'FRA 31', 'SUI 4', 'GBR 58', 'FRA 88'],
   };
-  const sailNoFor = (cls, i) => SAILNO[cls][i] || (cls === 'f50' ? ['SUI', 'DEN', 'CAN', 'ITA', 'BRA', 'USA'][i - 6] : ['GER', 'FRA', 'ITA', 'SWE', 'NOR', 'POL'][i - 6] + ' ' + (cls === 'opti' ? 1400 + i * 37 : 60 + i * 7));
+  const sailNoFor = (cls, i) => SAILNO[cls][i] || (cls === 'f50' || cls === 'ac75' ? ['SUI', 'DEN', 'CAN', 'ITA', 'BRA', 'USA'][i - 6] : ['GER', 'FRA', 'ITA', 'SWE', 'NOR', 'POL'][i - 6] + ' ' + (cls === 'opti' ? 1400 + i * 37 : 60 + i * 7));
   const fleetFor = (cls, menu) => FLEET.slice(0, 6).map((f, i) => ({ ...f, sailNo: sailNoFor(cls, i), isPlayer: !menu && f.isPlayer }));
   const FLEET = [
     { name: 'Du', sailNo: 'GER 7', color: 0x0d2b52, stripe: 0xffb020, isPlayer: true, numColor: '#0d2b52', crew: 0xd7263d },
@@ -2938,7 +3003,7 @@ void main(){
     let fleet;
     if (cfg) {
       fleet = cfg.fleet.map((f, i) => ({ ...FLEET[i % FLEET.length], sailNo: sailNoFor(cls, i), name: f.human ? f.name : FLEET[i % FLEET.length].name, human: f.human, netId: f.id, isPlayer: i === mp.mySlot }));
-    } else fleet = fleetFor(cls);
+    } else fleet = fleetFor(cls).slice(0, settings.course === 'ac' ? 2 : 6);
     const courseType = cfg ? cfg.course : settings.course;
     const def = cfg ? cfg.def : settings.course === 'custom' ? settings.customDef : null;
     if (courseType === 'custom' && SIM.validateDef(def)) toast('Eigener Kurs unvollständig – Up & Down wird gesegelt', 3, 'bad');
@@ -3106,6 +3171,7 @@ void main(){
           else if (!p) toast(e.boat.name + ' ist gekentert', 2);
           break;
         case 'righted': if (e.boat === p) toast('Aufgerichtet – Schot fieren und Fahrt aufnehmen', 2.5, 'good'); break;
+        case 'boundary': if (e.boat === p) toast('Bahnbegrenzung überfahren – Strafe: 8 Sekunden gebremst', 3, 'bad'); else if (!p) toast(e.boat.name + ': Begrenzung überfahren', 2); break;
         case 'broach': if (e.boat === p) toast('Sonnenschuss! Zu viel Druck – fieren oder abfallen', 3, 'bad'); break;
         case 'takeoff': if (e.boat === p) toast('Abgehoben – du foilst! ✈', 1.6, 'good'); break;
         case 'splash': if (e.boat === p && world.t > 0) toast('Vom Foil gefallen – Ruder sanfter legen, Fahrt halten', 2.6, 'bad'); break;
@@ -3191,6 +3257,8 @@ void main(){
       st = (p.leg <= R.length ? stepLabel(R[p.leg - 1]) : legKind(world.course.finish.legTwa) + ' → ' + world.course.finish.name) + ` · ${p.leg}/${world.nLegs}`;
     }
     if (p.shadow > 0.06 && !p.done) st += ' · Abdeckung!';
+    if (world.course.bounds && !p.done) { const bd = world.course.bounds, dd = Math.min(p.x - bd.x0, bd.x1 - p.x); if (dd < Math.max(40, world.cls.L * 3)) st += dd < 0 ? ' · AUSSERHALB!' : ` · Grenze ${Math.max(0, dd).toFixed(0)} m`; }
+    if (p.slowT > 0) st += ' · Strafe';
     // Spi/Gennaker-Knopf
     const kb = $('bkite'), kc = world.cls.kite;
     kb.style.display = kc ? '' : 'none';
@@ -3311,6 +3379,7 @@ void main(){
       }
     }
     const dot = (x, z, c, r) => { g.fillStyle = c; g.beginPath(); g.arc(X(x), Z(z), r, 0, Math.PI * 2); g.fill(); };
+    if (C.bounds) { g.strokeStyle = 'rgba(255,77,77,0.8)'; g.setLineDash([4, 3]); for (const x of [C.bounds.x0, C.bounds.x1]) { g.beginPath(); g.moveTo(X(x), 0); g.lineTo(X(x), H); g.stroke(); } g.setLineDash([]); }
     for (const m of C.marks) dot(m.x, m.z, m.kind === 'cb' ? '#fff' : m.kind === 'lee' ? '#ffc21a' : m.kind === 'fin' ? '#5ab0ff' : '#ff6a13', m.kind === 'small' || m.kind === 'fin' ? 2.5 : 3.5);
     for (const b of world.boats) {
       g.save(); g.translate(X(b.x), Z(b.z)); g.rotate(b.h);
@@ -3605,7 +3674,7 @@ void main(){
     const specOn = $('mpspec').checked;
     const humans = (specOn ? mp.players.slice(1) : mp.players).slice(0, MAXP);
     if (!humans.length && !mp.fillAI) { mpMsg('Ohne Mitspieler bitte KI-Boote auffüllen lassen', 'bad'); return; }
-    const n = Math.min(MAXP, Math.max(humans.length, mp.fillAI ? 6 : humans.length));
+    const n = Math.min(MAXP, Math.max(humans.length, mp.fillAI ? (settings.course === 'ac' ? 2 : 6) : humans.length));
     const fleet = [];
     for (let i = 0; i < n; i++) fleet.push(i < humans.length ? { human: true, name: humans[i].name, id: humans[i].id } : { human: false });
     const cfg = { seed: (Math.random() * 1e9) | 0, cls: SIM.CLASSES[settings.cls] ? settings.cls : '470', course: settings.course, def: settings.course === 'custom' ? settings.customDef : null, laps: settings.laps, difficulty: settings.difficulty, fleet, t: -60 };
@@ -4325,6 +4394,7 @@ void main(){
     startLine.visible = showHelp && pl.leg === 0;
     finishLine.visible = showHelp && (pl.spec || (pl.leg > R0.length && !pl.done));
     const gst = !pl.spec && pl.leg >= 1 && pl.leg <= R0.length ? R0[pl.leg - 1] : null;
+    boundLines.forEach((l) => { l.visible = !!l.userData.on && state !== 'menu'; });
     gateLine.visible = showHelp && !!gst && gst.t === 'gate';
     if (gateLine.visible && gateLine.userData.st !== gst) { gateLine.userData.st = gst; setLine(gateLine, gst.a, gst.b, 0); }
     const lay = showHelp && world.player ? layInfo(world.player) : null;
