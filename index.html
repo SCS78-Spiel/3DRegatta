@@ -1445,7 +1445,7 @@ void main(){
     if (abs(a) >= 1.0) continue;
     float l = abs(dot(rel, vec2(Qb.y, Qb.x)));
     if (G.z > 0.0) l = abs(l - G.z);
-    if (l < Qb.w * 0.8 * hullHalfW(a, G.w)) discard;
+    if (l < Qb.w * 0.93 * hullHalfW(a, G.w)) discard;
   }
   float gust = 0.0;
   for (int i = 0; i < 14; i++){
@@ -1805,7 +1805,7 @@ void main(){
   // =================== Bootsklassen: 3D-Modelle & Segler ===================
   const SPECS = {
     opti: {
-      deck: 0.3, hull: { L: 2.31, B: 1.13, sheer: 0.3, rise: 0.1, depth: 0.15, bowW: 0.6, flat: true, rake: 0.05, camber: 0.02 },
+      deck: 0.3, hull: { L: 2.31, B: 1.13, sheer: 0.3, rise: 0.1, depth: 0.15, bowW: 0.6, flat: true, rake: 0.05, camber: 0.02, trake: 0 }, look: { style: 'plain', deck: 0xf4f2ec },
       cockpit: { z0: -0.88, z1: 1.0, inset: 0.09, floor: 0.06 },
       mastZ: -0.78, mastH: 2.35, mastR: 0.028, mastColor: 0xb9bec4, boomY: 0.28,
       main: { luff: 2.0, foot: 2.0, head: 1.45, peakRise: 0.75, roach: 0, camber: 0.13, tex: 'dacron' },
@@ -1813,7 +1813,7 @@ void main(){
       crew: [{ z: 0.55, role: 'helm' }],
     },
     '470': {
-      deck: 0.42, hull: { L: 4.7, B: 1.68, sheer: 0.42, rise: 0.15, depth: 0.24 },
+      deck: 0.42, hull: { L: 4.7, B: 1.68, sheer: 0.42, rise: 0.15, depth: 0.24, rake: 0.18, trake: -0.04 }, look: { style: 'stripe', deck: 0xeeece6 },
       cockpit: { z0: -1.05, z1: 2.1, inset: 0.3, floor: 0.1 },
       mastZ: -0.55, mastH: 6.78, mastR: 0.045, mastColor: 0xc9ccd0, boomY: 0.5,
       main: { luff: 6.0, foot: 2.4, head: 0.14, roach: 0.12, camber: 0.11, tex: 'dacron' },
@@ -1821,34 +1821,34 @@ void main(){
       crew: [{ z: 1.3, role: 'helm' }, { z: 0.25, role: 'crew', trap: true }],
     },
     '49er': {
-      deck: 0.38, hull: { L: 4.99, B: 1.4, sheer: 0.38, rise: 0.1, depth: 0.2 }, wing: 1.45,
+      deck: 0.38, hull: { L: 4.99, B: 1.4, sheer: 0.38, rise: 0.08, depth: 0.2, rake: 0.03, trake: 0, chine: true, chineY: 0.12, camber: 0.02 }, wing: 1.45, look: { style: 'stripe', deck: 0xd9dbde },
       mastZ: -0.75, mastH: 8.1, mastR: 0.045, mastColor: 0x1b1d21, boomY: 0.55,
       main: { luff: 7.3, foot: 2.65, head: 1.05, roach: 0.18, camber: 0.09, tex: 'film' },
       jib: { headH: 6.0, foot: 1.6 }, kite: { type: 'asym', sprit: 1.5 }, rig: 'std', app: 'skiff',
       crew: [{ z: 1.3, role: 'helm', trap: true }, { z: 0.35, role: 'crew', trap: true }],
     },
     moth: {
-      deck: 0.25, hull: { L: 3.35, B: 0.34, sheer: 0.25, rise: 0.08, depth: 0.16 }, wing: 1.12,
+      deck: 0.25, hull: { L: 3.35, B: 0.34, sheer: 0.25, rise: 0.06, depth: 0.16, rake: -0.04, trake: 0, chine: true }, wing: 1.12, look: { style: 'carbon', deck: 0x3a3e45 },
       mastZ: -0.6, mastH: 6.25, mastR: 0.035, mastColor: 0x1b1d21, boomY: 0.12,
       main: { luff: 5.75, foot: 2.35, head: 0.9, roach: 0.15, camber: 0.085, tex: 'film' },
       jib: null, kite: null, rig: 'moth', app: 'moth', foilZ: -0.35,
       crew: [{ z: 0.5, role: 'helm' }],
     },
     nacra: {
-      cat: true, deck: 0.5, hull: { L: 5.25, B: 0.44, sheer: 0.5, rise: 0.18, depth: 0.33 }, hullX: 1.08,
+      cat: true, deck: 0.5, hull: { L: 5.25, B: 0.44, sheer: 0.5, rise: 0.12, depth: 0.33, rake: -0.03, trake: 0, camber: 0.12 }, hullX: 1.08, look: { style: 'stripe', deck: 0xf2f2ef },
       mastZ: -0.75, mastH: 9.1, mastR: 0.05, mastColor: 0x1b1d21, boomY: 0.42,
       main: { luff: 8.3, foot: 2.7, head: 1.3, roach: 0.18, camber: 0.09, tex: 'film' },
       jib: { headH: 6.6, foot: 1.5 }, kite: { type: 'asym', sprit: 1.8 }, rig: 'cat', app: 'nacra', foilZ: -0.2,
       crew: [{ z: 1.4, role: 'helm', trap: true }, { z: 0.45, role: 'crew', trap: true }],
     },
     f50: {
-      cat: true, deck: 1.05, hull: { L: 15, B: 0.95, sheer: 1.05, rise: 0.3, depth: 0.6 }, hullX: 3.95,
+      cat: true, deck: 1.05, hull: { L: 15, B: 0.95, sheer: 1.05, rise: 0.15, depth: 0.6, rake: -0.35, trake: 0, chine: true, chineY: 0.15, camber: 0.1 }, hullX: 3.95, look: { style: 'livery', deck: 0x3a3e45 },
       mastZ: -1.4, mastH: 24, mastR: 0.14, mastColor: 0x1b1d21, boomY: 0.35,
       wingSail: { h: 23, c0: 4.4, c1: 1.3 }, jib: { headH: 16.5, foot: 4.0 }, kite: null, rig: 'f50', app: 'f50', foilZ: -1.2,
       crew: [{ z: 4.6, role: 'pod' }, { z: 3.3, role: 'pod' }, { z: 2.0, role: 'pod' }, { z: 4.1, role: 'pod', lee: true }, { z: 2.6, role: 'pod', lee: true }],
     },
     ac75: {
-      deck: 1.3, hull: { L: 22.86, B: 5.0, sheer: 1.3, rise: 0.25, depth: 0.75, bowW: 0.32, rake: 0.6, camber: 0.04 }, hullX: 1.35,
+      deck: 1.3, hull: { L: 22.86, B: 5.0, sheer: 1.3, rise: 0.1, depth: 0.75, bowW: 0.32, rake: -0.4, trake: 0, camber: 0.03, chine: true, chineY: 0.1 }, hullX: 1.35, look: { style: 'livery', deck: 0x2e3238 },
       mastZ: -1.2, mastH: 26.5, mastR: 0.32, mastColor: 0x1b1d21, boomY: 0.15, boomless: true,
       main: { luff: 25.5, foot: 7.2, head: 3.2, roach: 0.12, camber: 0.11, tex: 'carbon' },
       jib: { headH: 21, foot: 5.2 }, kite: null, rig: 'std', app: 'ac75', foilZ: -0.6,
@@ -1856,7 +1856,7 @@ void main(){
              { z: 4.6, role: 'pod' }, { z: 4.6, role: 'pod', lee: true }, { z: 3.0, role: 'pod' }, { z: 3.0, role: 'pod', lee: true }],
     },
     imoca: {
-      deck: 1.55, hull: { L: 18.3, B: 5.85, sheer: 1.55, rise: 0.65, depth: 0.95, bowW: 0.3 },
+      deck: 1.55, hull: { L: 18.3, B: 5.85, sheer: 1.55, rise: 0.45, depth: 0.95, bowW: 0.3, rake: -0.2, trake: 0, chine: true, chineY: 0.12, camber: 0.05 }, look: { style: 'livery', deck: 0x3a3e45, antifoul: true },
       mastZ: -1.4, mastH: 29, mastR: 0.26, mastColor: 0x1b1d21, boomY: 2.6,
       main: { luff: 26, foot: 7.6, head: 2.8, roach: 0.15, camber: 0.1, tex: 'carbon' },
       jib: { headH: 22.5, foot: 6.6 }, kite: { type: 'asym', sprit: 2.6 }, rig: 'std', app: 'imoca', foilZ: -0.8,
@@ -1884,11 +1884,20 @@ void main(){
     // Punkt auf der Außenhaut: Station t, Umfangsparameter q (0 = Deckskante, 1 = Kiel)
     const skin = (t, q, side) => {
       const w = halfW(t), sh = sheerH(t), d = depth(t);
-      const ph = q * Math.PI / 2;
-      // leichter Ausfall (Flare) nach oben
-      const flare = 1 + 0.06 * (1 - q) * (h.flat ? 0.3 : 1);
-      const x = side * w * Math.pow(Math.cos(ph), ex) * flare;
-      const y = sh - (sh + d) * Math.pow(Math.sin(ph), ey);
+      let x, y;
+      if (h.chine) {
+        // Knickspant: fast senkrechte Bordwand bis zur Kimm, dann flacher V-Boden
+        const qc = 0.42, cy = sh * (h.chineY != null ? h.chineY : 0.25) - d * 0.15 * (1 - t);
+        if (q <= qc) { const u = q / qc; x = w * (1.02 - 0.06 * u); y = sh - (sh - cy) * u; }
+        else { const u = (q - qc) / (1 - qc); x = w * 0.96 * Math.pow(1 - u, 0.7); y = cy - (cy + d) * Math.pow(u, 2.1); }
+        x *= side;
+      } else {
+        const ph = q * Math.PI / 2;
+        // leichter Ausfall (Flare) nach oben
+        const flare = 1 + 0.06 * (1 - q) * (h.flat ? 0.3 : 1);
+        x = side * w * Math.pow(Math.cos(ph), ex) * flare;
+        y = sh - (sh + d) * Math.pow(Math.sin(ph), ey);
+      }
       const yn = (y + d) / (sh + d);
       let z = -L / 2 + t * L;
       z += -rake * yn * Math.max(0, 1 - t / 0.18);
@@ -1896,7 +1905,7 @@ void main(){
       return [x, y, z];
     };
     const P = [], UV = [], C = [], I = [];
-    const below = new THREE.Color(0.16, 0.16, 0.18), white = new THREE.Color(1, 1, 1);
+    const below = new THREE.Color(0.16, 0.16, 0.18), white = new THREE.Color(1, 1, 1), wet = new THREE.Color(0.9, 0.92, 0.95);
     for (const side of [1, -1]) {
       const base = P.length / 3;
       for (let i = 0; i <= NS; i++) {
@@ -1906,7 +1915,7 @@ void main(){
           P.push(...p);
           // UV: obere Hälfte der Textur = Steuerbord (Bug rechts), untere = Backbord (Bug links)
           UV.push(side > 0 ? 1 - t : t, side > 0 ? 1 - 0.5 * q : 0.5 - 0.5 * q);
-          const c = p[1] < -0.035 * Math.max(1, sc) ? below : white;
+          const c = opts.antifoul ? (p[1] < -0.035 * Math.max(1, sc) ? below : white) : (p[1] < -0.02 ? wet : white);
           C.push(c.r, c.g, c.b);
         }
       }
@@ -1915,13 +1924,14 @@ void main(){
         I.push(a, bb, a + 1, a + 1, bb, bb + 1);
       }
     }
-    const closeEnd = (i, t) => {
-      const c = P.length / 3; const m = skin(t, 0.5, 1); P.push(0, (sheerH(t) - depth(t)) / 2, m[2]); UV.push(0.5, 0.75); C.push(1, 1, 1);
-      const o1 = i * (NJ + 1), o2 = (NS + 1) * (NJ + 1) + i * (NJ + 1);
-      for (let j = 0; j < NJ; j++) { I.push(c, o1 + j, o1 + j + 1, c, o2 + j, o2 + j + 1); }
+    // Spiegel als ebene Fläche: Fächer vom Kielpunkt aus (keine Delle in der Mitte)
+    const closeEnd = (i) => {
+      const o1 = i * (NJ + 1), o2 = (NS + 1) * (NJ + 1) + i * (NJ + 1), k1 = o1 + NJ;
+      for (let j = 0; j < NJ - 1; j++) { I.push(k1, o1 + j, o1 + j + 1); I.push(o2 + NJ, o2 + j + 1, o2 + j); }
+      I.push(k1, o2, o1);
     };
-    closeEnd(NS, 1);
-    if (bw > 0) closeEnd(0, 0);
+    closeEnd(NS);
+    if (bw > 0) closeEnd(0);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
@@ -1971,37 +1981,83 @@ void main(){
       const pts = []; for (let i = 0; i <= 24; i++) { const p = skin(i / 24, 0, s); pts.push(new THREE.Vector3(p[0] * 1.004, p[1] + 0.006, p[2])); }
       return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, Math.max(0.012, 0.014 * sc), 6, false);
     });
-    return { hull: g, deck: dg, walls: wg, floor: fg, rails, halfW, sheerH, skin };
+    // Breite an der Wasserlinie (y = 0) relativ zur größten Breite – für das Ausblenden des Wassers im Rumpf
+    let wlRatio = 0.8, wlQ = 0.45;
+    { let prev = skin(0.5, 0, 1); for (let k = 1; k <= 60; k++) { const p = skin(0.5, k / 60, 1); if (prev[1] >= 0 && p[1] < 0) { const f = prev[1] / (prev[1] - p[1]); wlRatio = (prev[0] + (p[0] - prev[0]) * f) / halfW(0.5); wlQ = (k - 1 + f) / 60; break; } prev = p; } }
+    return { hull: g, deck: dg, walls: wg, floor: fg, rails, halfW, sheerH, skin, wlRatio, wlQ };
   }
   // Rumpf-Lackierung: Grundfarbe, Wasserpass-/Zierstreifen, Segelnummer am Bug
+  // Rumpf-Lackierung nach Vorbild realer Boote:
+  //  plain  = einfarbig mit feiner Zierlinie (Opti, Startschiff)
+  //  stripe = weißer Rumpf, farbiges Band unter der Deckskante + Wasserpasslinie (470er, 49er, Nacra)
+  //  carbon = Sichtcarbon mit farbigem Akzent (Moth)
+  //  livery = Team-Design: Grundfarbe, schräger Akzent-Schwung, Carbon-Unterwasserschiff (F50, AC75, IMOCA)
+  const lum = (c) => ((c >> 16) & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + (c & 255) * 0.11;
+  function carbonPattern(g, x0, y0, w, h, base) {
+    g.fillStyle = base || '#1b1e23'; g.fillRect(x0, y0, w, h);
+    for (let y = y0; y < y0 + h; y += 6) for (let x = x0 + ((y / 6) % 2) * 6; x < x0 + w; x += 12) {
+      g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(x, y, 6, 3);
+      g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(x + 6, y + 3, 6, 3);
+    }
+  }
   function hullTexture(color, stripe, number, L, arcH, opts = {}) {
+    const style = opts.style || 'plain';
     const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 512;
     const g = cv.getContext('2d');
-    const hc = HEX(color), sc2 = HEX(stripe || 0xf4f4f0);
+    const accent = HEX(stripe != null ? stripe : lum(color) > 160 ? 0x1d3557 : 0xf4f4f0);
+    // Höhe der Wasserlinie im Texturband (Anteil von oben), je nach Freibord
+    const wl = clamp(opts.wl != null ? opts.wl : 0.42, 0.2, 0.75);
     for (const half of [0, 1]) {
-      const y0 = half * 256;
+      const y0 = half * 256, bowRight = half === 0;
+      const bx = (f) => (bowRight ? f : 1 - f) * 1024; // f: 0 = Heck, 1 = Bug
+      if (style === 'carbon') {
+        carbonPattern(g, 0, y0, 1024, 256);
+        g.fillStyle = HEX(color); g.fillRect(0, y0 + 10, 1024, 12);
+      } else if (style === 'stripe') {
+        g.fillStyle = '#f6f6f2'; g.fillRect(0, y0, 1024, 256);
+        g.fillStyle = HEX(color); g.fillRect(0, y0 + 6, 1024, Math.round(256 * wl * 0.42));
+        g.fillStyle = 'rgba(255,255,255,0.9)'; g.fillRect(0, y0 + 6 + Math.round(256 * wl * 0.42), 1024, 4);
+        g.fillStyle = HEX(color); g.fillRect(0, y0 + Math.round(256 * wl) - 3, 1024, 5);
+      } else if (style === 'livery') {
+        g.fillStyle = HEX(color); g.fillRect(0, y0, 1024, 256);
+        // schräger Akzent-Schwung vom Bug nach achtern
+        g.fillStyle = accent; g.beginPath();
+        g.moveTo(bx(1.0), y0 + 256 * wl * 0.15); g.lineTo(bx(0.62), y0 + 256 * wl * 0.15); g.lineTo(bx(0.42), y0 + 256 * wl * 0.85); g.lineTo(bx(1.0), y0 + 256 * wl * 0.85); g.closePath(); g.fill();
+        g.fillStyle = 'rgba(255,255,255,0.85)'; g.beginPath();
+        g.moveTo(bx(0.62), y0 + 256 * wl * 0.15); g.lineTo(bx(0.6), y0 + 256 * wl * 0.15); g.lineTo(bx(0.4), y0 + 256 * wl * 0.85); g.lineTo(bx(0.42), y0 + 256 * wl * 0.85); g.closePath(); g.fill();
+        carbonPattern(g, 0, y0 + Math.round(256 * wl) + 4, 1024, 256 - Math.round(256 * wl) - 4, '#15181c');
+        g.fillStyle = accent; g.fillRect(0, y0 + Math.round(256 * wl), 1024, 4);
+      } else {
+        g.fillStyle = HEX(color); g.fillRect(0, y0, 1024, 256);
+        g.fillStyle = accent; g.fillRect(0, y0 + 9, 1024, 5);
+      }
+      // Glanzverlauf: oben etwas heller (Himmelsreflex), zur Wasserlinie dunkler
       const gr = g.createLinearGradient(0, y0, 0, y0 + 256);
-      gr.addColorStop(0, hc); gr.addColorStop(1, hc);
+      gr.addColorStop(0, 'rgba(255,255,255,0.10)'); gr.addColorStop(wl, 'rgba(0,0,0,0.0)'); gr.addColorStop(1, 'rgba(0,0,0,0.12)');
       g.fillStyle = gr; g.fillRect(0, y0, 1024, 256);
-      // Zierstreifen unter der Deckskante
-      g.fillStyle = sc2; g.fillRect(0, y0 + 8, 1024, 9);
-      g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(0, y0, 1024, 4);
-      // feine Glanz-/Fertigungsnuancen
-      g.fillStyle = 'rgba(0,0,0,0.05)';
-      for (let i = 0; i < 6; i++) g.fillRect(0, y0 + 30 + i * 30, 1024, 1);
+      // feiner Schmutz-/Wasserrand an der Wasserlinie
+      g.fillStyle = 'rgba(70,60,40,0.10)'; g.fillRect(0, y0 + Math.round(256 * wl) - 1, 1024, 3);
       if (number) {
         const pxX = L / 1024, pxY = arcH / 256, k = pxY / pxX;
-        const bowX = half === 0 ? 1024 * 0.8 : 1024 * 0.2;
-        g.save(); g.translate(bowX, y0 + 62); g.scale(k * 0.95, 1);
-        g.font = '800 46px Inter, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        const lum = ((color >> 16) & 255) * 0.3 + ((color >> 8) & 255) * 0.59 + (color & 255) * 0.11;
-        g.fillStyle = lum > 150 ? '#14213d' : '#f4f4f0';
+        g.save(); g.translate(bx(0.8), y0 + 256 * wl * (style === 'livery' ? 0.5 : 0.55)); g.scale(k * 0.95, 1);
+        g.font = `800 ${style === 'livery' ? 44 : 40}px Inter, Arial, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        const bg = style === 'stripe' ? color : style === 'carbon' ? 0x111111 : style === 'livery' ? (stripe != null ? stripe : 0xffffff) : color;
+        g.fillStyle = lum(bg) > 150 ? '#14213d' : '#f4f4f0';
         g.fillText(number, 0, 0); g.restore();
       }
     }
     const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
     return t;
   }
+  // feine Rauheits-Variation (Wassertropfen, Politurspuren) für realistischere Glanzlichter
+  const glossNoise = (() => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    const g = cv.getContext('2d'); g.fillStyle = 'rgb(70,70,70)'; g.fillRect(0, 0, 256, 256);
+    let s = 5; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 1400; i++) { const v = 40 + r() * 90; g.fillStyle = `rgba(${v},${v},${v},0.5)`; const rr = 1 + r() * 4; g.beginPath(); g.arc(r() * 256, r() * 256, rr, 0, Math.PI * 2); g.fill(); }
+    const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6, 2);
+    return t;
+  })();
   // Rutschfester Decksbelag (feine Körnung) – als Farb- und Bump-Textur
   const nonSkid = (() => {
     const cv = document.createElement('canvas'); cv.width = cv.height = 256;
@@ -2013,7 +2069,7 @@ void main(){
     return t;
   })();
   const deckMat = (tint) => new THREE.MeshStandardMaterial({ map: nonSkid, bumpMap: nonSkid, bumpScale: 0.004, color: lin(tint || 0xffffff), roughness: 0.85, side: THREE.DoubleSide });
-  const hullMat = (map) => new THREE.MeshPhysicalMaterial({ map, vertexColors: true, roughness: 0.28, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.06, side: THREE.DoubleSide });
+  const hullMat = (map, carbon) => new THREE.MeshPhysicalMaterial({ map, roughnessMap: glossNoise, vertexColors: true, roughness: carbon ? 0.5 : 0.42, metalness: 0.0, clearcoat: 1, clearcoatRoughness: carbon ? 0.12 : 0.05, envMapIntensity: 1.15, side: THREE.DoubleSide });
 
   // ---------- Segeltexturen ----------
   function sailTexture(kind, number, numColor, accent, chordAt, luff) {
@@ -2256,11 +2312,13 @@ void main(){
       this.root = new THREE.Group(); this.tilt = new THREE.Group(); this.root.add(this.tilt);
       const deckY = S.deck;
       // Rümpfe
-      const hull = makeHull(H, b.color, { cockpit: S.cockpit });
-      this.halfW = hull.halfW;
+      const hull = makeHull(H, b.color, { cockpit: S.cockpit, antifoul: (S.look || {}).antifoul });
+      this.halfW = hull.halfW; this.wlRatio = hull.wlRatio;
       const arcH = (H.sheer + H.depth) * 1.25;
-      const hm = hullMat(hullTexture(b.color, b.stripe, S.app === 'f50' || S.app === 'imoca' || S.app === 'ac75' ? b.name.toUpperCase().slice(0, 10) : b.sailNo, L, arcH));
-      const dmat = deckMat(S.app === 'imoca' ? 0x9aa0a6 : S.app === 'f50' ? 0x6a7078 : 0xffffff);
+      const look = S.look || {};
+      const wl = hull.wlQ;
+      const hm = hullMat(hullTexture(b.color, b.stripe, S.app === 'f50' || S.app === 'imoca' || S.app === 'ac75' ? b.name.toUpperCase().slice(0, 10) : b.sailNo, L, arcH, { style: look.style, wl }), look.style === 'carbon');
+      const dmat = deckMat(look.deck || 0xffffff);
       const railMat = std(S.app === 'opti' ? 0x9c6b3c : 0x2b2f35, 0.5, 0.1);
       const innerMat = new THREE.MeshStandardMaterial({ color: lin(0xdcd9d0), roughness: 0.7, side: THREE.DoubleSide });
       const addHull = (x) => {
@@ -2358,6 +2416,7 @@ void main(){
         const rs = box(0.14, 3.6, 0.7, blk, 0.35); rs.position.y = -1.6; this.rudderM.add(rs);
         const rw = foilPlate(2.4, 0.5, 0.1, blk); rw.position.y = -3.4; this.rudderM.add(rw);
         const fair = box(1.4, 0.35, 3.0, 0xdedfe2, 0.4); fair.position.set(0, deckY + 0.05, -3.2); this.tilt.add(fair);
+        const bustle = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 10), hm); bustle.scale.set(0.45, 0.55, 7.5); bustle.position.set(0, -0.62, 1.2); bustle.castShadow = true; this.tilt.add(bustle);
       } else if (S.app === 'imoca') {
         const cab = box(H.B * 0.42, 0.75, 5.2, 0xdedfe2, 0.4); cab.position.set(0, deckY + 0.3, -0.6); this.tilt.add(cab);
         const win = box(H.B * 0.43, 0.25, 4.6, 0x0d1520, 0.1, 0.5); win.position.set(0, deckY + 0.45, -0.6); this.tilt.add(win);
@@ -2841,7 +2900,7 @@ void main(){
   const markGroup = new THREE.Group(); scene.add(markGroup);
   function makeCommittee(flagCols) {
     const cbg = new THREE.Group();
-    const h = makeHull({ L: 9, B: 3.0, sheer: 0.9, rise: 0.22, depth: 0.5 }, 0xf2f2ee, { stripe: 0x1d3557 });
+    const h = makeHull({ L: 9, B: 3.0, sheer: 0.9, rise: 0.22, depth: 0.5 }, 0xf2f2ee, { stripe: 0x1d3557, antifoul: true });
     const hm = new THREE.Mesh(h.hull, hullMat(hullTexture(0xf2f2ee, 0x1d3557, 'RACE COMMITTEE', 9, 1.75)));
     const dm = new THREE.Mesh(h.deck, deckMat()); hm.castShadow = true;
     const cab = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.4, 3.2), std(0xf7f7f2, 0.4)); cab.position.set(0, 1.6, 0.2); cab.castShadow = true;
@@ -4350,7 +4409,7 @@ void main(){
         const b = v.b, S = v.S, foil = SIM.CLASSES[v.key].foil;
         const wgt = (foil && !foil.partial ? 1 - clamp((b.fly || 0) * 1.5, 0, 1) : 1) * (1 - clamp((b.capAmt || 0) * 3, 0, 1));
         boatU.P[i].set(b.x, b.z, v.y0, wgt);
-        boatU.Q[i].set(Math.sin(b.h), Math.cos(b.h), v.L * 0.5, S.hull.B * 0.5);
+        boatU.Q[i].set(Math.sin(b.h), Math.cos(b.h), v.L * 0.5, S.hull.B * 0.5 * (v.wlRatio || 0.8));
         boatU.G[i].set(Math.tan(v.pitch), Math.tan(v.roll), S.cat ? S.hullX : 0, S.hull.bowW || 0);
       });
       { const cb = markObjs.find((m) => m.big); if (cb) { boatU.P[12].set(cb.ref.x, cb.ref.z, cb.o.position.y, 1); boatU.Q[12].set(0, 1, 4.5, 1.5); boatU.G[12].set(0, 0, 0, 0); } }
